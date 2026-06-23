@@ -82,7 +82,7 @@ input,button,textarea{font-family:var(--font)}
 .msg-row.me{flex-direction:row-reverse}
 .avatar-sm{width:28px;height:28px;border-radius:50%;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden}
 .avatar-sm img{width:100%;height:100%;object-fit:cover}
-.bubble{max-width:70%;padding:9px 13px;border-radius:var(--radius);font-size:14.5px;line-height:1.5;word-break:break-word;white-space:pre-wrap;position:relative}
+.bubble{max-width:75%;min-width:60px;padding:9px 13px;border-radius:var(--radius);font-size:15px;line-height:1.6;word-break:break-word;white-space:pre-wrap;position:relative;display:inline-block}
 .msg-row.them .bubble{background:var(--bubble-them);border-bottom-left-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,.1)}
 .msg-row.me .bubble{background:var(--bubble-me);border-bottom-right-radius:4px}
 .bubble img{max-width:100%;border-radius:10px;display:block;cursor:pointer;white-space:normal}
@@ -517,7 +517,7 @@ function renderMsg(area,d){
   const time = d.createdAt?fmtTime(d.createdAt.toDate()):'';
   row.innerHTML=`
     ${!me?`<div class="avatar-sm" style="background:${m.color}20">${m.photoURL?`<img src="${m.photoURL}"/>`:(m.emoji)}</div>`:''}
-    <div style="display:flex;flex-direction:column;align-items:${me?'flex-end':'flex-start'};gap:2px;max-width:75%">
+    <div style="display:flex;flex-direction:column;align-items:${me?'flex-end':'flex-start'};gap:2px;max-width:80%">
       ${!me?`<div class="msg-sender">${m.name}</div>`:''}
       <div class="bubble">${bubble}</div>
     </div>
@@ -851,13 +851,28 @@ function showToast(msg){
 }
 
 // ===== PWA =====
-const manifest={name:"Family Chat",short_name:"Family Chat",start_url:"./",display:"standalone",background_color:"#06C755",theme_color:"#06C755",icons:[{src:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='40' fill='%2306C755'/%3E%3Ctext y='155' x='20' font-size='150'%3E%F0%9F%92%AC%3C/text%3E%3C/svg%3E",sizes:"192x192",type:"image/svg+xml"},{src:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='100' fill='%2306C755'/%3E%3Ctext y='410' x='50' font-size='400'%3E%F0%9F%92%AC%3C/text%3E%3C/svg%3E",sizes:"512x512",type:"image/svg+xml"}]};
-const mb=new Blob([JSON.stringify(manifest)],{type:'application/json'});
-document.getElementById('manifest-link').href=URL.createObjectURL(mb);
-if('serviceWorker' in navigator){
-  const sw=`self.addEventListener('install',e=>self.skipWaiting());self.addEventListener('activate',e=>e.waitUntil(clients.claim()));self.addEventListener('fetch',e=>e.respondWith(fetch(e.request).catch(()=>new Response(''))));`;
-  navigator.serviceWorker.register(URL.createObjectURL(new Blob([sw],{type:'application/javascript'}))).catch(()=>{});
-}
+// PWA manifest via blob
+const iconSvg192 = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><rect width="192" height="192" rx="40" fill="#06C755"/><text y="140" x="24" font-size="130">💬</text></svg>`;
+const iconSvg512 = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="100" fill="#06C755"/><text y="380" x="60" font-size="360">💬</text></svg>`;
+const icon192url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(iconSvg192);
+const icon512url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(iconSvg512);
+const manifest = {
+  name: "Family Chat",
+  short_name: "Family Chat",
+  description: "ห้องแชทครอบครัว",
+  start_url: "./",
+  scope: "./",
+  display: "standalone",
+  orientation: "portrait",
+  background_color: "#06C755",
+  theme_color: "#06C755",
+  icons: [
+    {src: icon192url, sizes: "192x192", type: "image/svg+xml", purpose: "any maskable"},
+    {src: icon512url, sizes: "512x512", type: "image/svg+xml", purpose: "any maskable"}
+  ]
+};
+const mb = new Blob([JSON.stringify(manifest)], {type:'application/manifest+json'});
+document.getElementById('manifest-link').href = URL.createObjectURL(mb);
 </script>
 </body>
 </html>

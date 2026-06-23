@@ -294,6 +294,9 @@ input,button,textarea{font-family:var(--font)}
     <button class="inp-btn" onclick="pickImage()">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
     </button>
+    <button class="inp-btn" onclick="shareLocation()" title="แชร์ตำแหน่ง">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+    </button>
     <textarea id="msgInput" placeholder="พิมพ์ข้อความ..." rows="1" oninput="autoResize(this);onTyping()" onkeydown="handleKey(event)"></textarea>
     <button class="send-btn" onclick="sendMsg()">
       <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
@@ -308,6 +311,9 @@ input,button,textarea{font-family:var(--font)}
     <button style="background:none;border:none;color:#fff;font-size:22px;cursor:pointer;padding:4px" onclick="closeGroupRoom()">‹</button>
     <div class="avatar" style="width:38px;height:38px;font-size:20px;background:rgba(255,255,255,.2)">👨‍👩‍👧‍👦</div>
     <div class="room-info" style="margin-left:8px"><div class="name">ครอบครัว Mechai</div><div class="status" id="groupMemberCount"></div></div>
+    <button class="room-act-btn" onclick="startGroupCall()" title="โทรกลุ่ม">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg>
+    </button>
   </div>
   <div class="group-msg-area" id="groupMsgArea"></div>
   <div class="input-area">
@@ -363,9 +369,12 @@ input,button,textarea{font-family:var(--font)}
 <div id="videoContainer">
   <video id="remoteVideo" autoplay playsinline></video>
   <video id="localVideo" autoplay playsinline muted></video>
-  <div style="position:absolute;bottom:40px;left:0;right:0;display:flex;justify-content:center;gap:24px">
+  <div style="position:absolute;bottom:40px;left:0;right:0;display:flex;justify-content:center;gap:16px">
     <button class="call-btn cam" id="camBtn" onclick="toggleCam()">
       <div class="icon">📷</div><span style="color:#fff;font-size:11px">กล้อง</span>
+    </button>
+    <button class="call-btn" id="screenBtn" onclick="toggleScreenShare()">
+      <div class="icon" style="background:rgba(255,255,255,.2)">🖥️</div><span style="color:#fff;font-size:11px">หน้าจอ</span>
     </button>
     <button class="call-btn end" onclick="endCall()">
       <div class="icon">📵</div><span style="color:#fff;font-size:11px">วางสาย</span>
@@ -739,6 +748,28 @@ function renderMsg(area,d,docId=""){
   const m = getMember(d.senderEmail);
   const row = document.createElement('div');
   row.className='msg-row '+(me?'me':'them');
+  if(d.type==='location'){
+    const sysDiv=document.createElement('div');
+    const me2=d.senderEmail===currentUser.email;
+    const m2=getMember(d.senderEmail);
+    const row2=document.createElement('div');
+    row2.className='msg-row '+(me2?'me':'them');
+    const mapUrl=`https://maps.googleapis.com/maps/api/staticmap?center=${d.lat},${d.lng}&zoom=15&size=240x160&markers=${d.lat},${d.lng}&key=`;
+    row2.innerHTML=`
+      ${!me2?`<div class="avatar-sm" style="background:${m2.color}20">${m2.emoji}</div>`:''}
+      <div style="display:flex;flex-direction:column;align-items:${me2?'flex-end':'flex-start'};gap:2px">
+        ${!me2?`<div class="msg-sender">${m2.name}</div>`:''}
+        <div class="bubble" style="padding:8px;cursor:pointer" onclick="window.open('https://www.google.com/maps?q=${d.lat},${d.lng}','_blank')">
+          <div style="font-size:20px;margin-bottom:4px">📍</div>
+          <div style="font-size:13px;font-weight:600">ตำแหน่งของฉัน</div>
+          <div style="font-size:11px;color:var(--gray)">${d.lat}, ${d.lng}</div>
+          <div style="font-size:12px;color:var(--green);margin-top:4px">แตะเพื่อเปิดแผนที่</div>
+        </div>
+      </div>
+      <div class="msg-time">${d.createdAt?fmtTime(d.createdAt.toDate()):''}</div>`;
+    area.appendChild(row2);
+    return;
+  }
   if(d.type==='system'){
     const sysDiv = document.createElement('div');
     sysDiv.style.cssText='text-align:center;color:var(--gray);font-size:12px;margin:4px 0;padding:4px 12px;background:rgba(0,0,0,.06);border-radius:12px;display:inline-block;align-self:center';
@@ -1489,6 +1520,158 @@ async function deleteEvent(id){
     showToast('ลบแล้ว');
   }
 }
+
+// ===== SHARE LOCATION =====
+async function shareLocation(){
+  if(!navigator.geolocation){ showToast('เบราว์เซอร์ไม่รองรับ GPS'); return; }
+  showToast('กำลังหาตำแหน่ง...');
+  navigator.geolocation.getCurrentPosition(async pos=>{
+    const lat=pos.coords.latitude.toFixed(6);
+    const lng=pos.coords.longitude.toFixed(6);
+    const url=`https://www.google.com/maps?q=${lat},${lng}`;
+    const text=`📍 ตำแหน่งของฉัน
+${url}`;
+    try{
+      await db.collection('rooms').doc(currentRoomId).collection('messages').add({
+        text, senderEmail:currentUser.email, type:'location',
+        lat, lng, createdAt:firebase.firestore.FieldValue.serverTimestamp()
+      });
+      showToast('แชร์ตำแหน่งแล้ว ✓');
+    }catch(e){ showToast('แชร์ไม่ได้'); }
+  }, err=>{ showToast('ไม่สามารถหาตำแหน่งได้'); });
+}
+
+// ===== SCREEN SHARE =====
+let screenStream = null;
+let isScreenSharing = false;
+
+async function toggleScreenShare(){
+  if(!peerConn){ showToast('ต้องอยู่ในสายก่อน'); return; }
+  if(!isScreenSharing){
+    try{
+      screenStream = await navigator.mediaDevices.getDisplayMedia({video:true});
+      const screenTrack = screenStream.getVideoTracks()[0];
+      const sender = peerConn.getSenders().find(s=>s.track&&s.track.kind==='video');
+      if(sender) sender.replaceTrack(screenTrack);
+      document.getElementById('localVideo').srcObject = screenStream;
+      isScreenSharing = true;
+      const btn=document.getElementById('screenBtn');
+      if(btn){ btn.querySelector('.icon').textContent='⏹️'; btn.querySelector('span').textContent='หยุดแชร์'; btn.querySelector('.icon').style.background='rgba(255,59,48,.7)'; }
+      screenTrack.onended = ()=>{ isScreenSharing=false; stopScreenShare(); };
+      showToast('กำลังแชร์หน้าจอ');
+    }catch(e){ showToast('แชร์หน้าจอไม่ได้: '+e.message); }
+  } else { stopScreenShare(); }
+}
+
+function stopScreenShare(){
+  if(screenStream){ screenStream.getTracks().forEach(t=>t.stop()); screenStream=null; }
+  isScreenSharing=false;
+  if(localStream){
+    const videoTrack=localStream.getVideoTracks()[0];
+    const sender=peerConn?.getSenders().find(s=>s.track&&s.track.kind==='video');
+    if(sender&&videoTrack) sender.replaceTrack(videoTrack);
+    document.getElementById('localVideo').srcObject=localStream;
+  }
+  const btn=document.getElementById('screenBtn');
+  if(btn){ btn.querySelector('.icon').textContent='🖥️'; btn.querySelector('span').textContent='หน้าจอ'; btn.querySelector('.icon').style.background='rgba(255,255,255,.2)'; }
+  showToast('หยุดแชร์หน้าจอแล้ว');
+}
+
+// ===== PUSH NOTIFICATION =====
+async function requestNotificationPermission(){
+  if(!('Notification' in window)) return;
+  if(Notification.permission==='default'){
+    const perm = await Notification.requestPermission();
+    if(perm==='granted') showToast('เปิดการแจ้งเตือนแล้ว 🔔');
+  }
+}
+
+function sendNotification(title, body, icon=''){
+  if(Notification.permission==='granted' && document.hidden){
+    new Notification(title,{body, icon: icon||'', badge:'', tag:'family-chat'});
+  }
+}
+
+// Hook notifications into incoming messages
+const _origListenMessages = listenMessages;
+function listenMessages(){
+  const area = document.getElementById('messagesArea');
+  area.innerHTML='<div class="loading-center"><div class="spinner"></div></div>';
+  if(unsubMessages) unsubMessages();
+  let firstLoad = true;
+  unsubMessages = db.collection('rooms').doc(currentRoomId)
+    .collection('messages').orderBy('createdAt','asc')
+    .onSnapshot(snap => {
+      const wasAtBottom = area.scrollHeight - area.scrollTop - area.clientHeight < 60;
+      area.innerHTML='';
+      let lastDate='';
+      snap.forEach(doc => {
+        const d = doc.data();
+        if(!d.createdAt) return;
+        const date = d.createdAt.toDate().toLocaleDateString('th-TH',{day:'numeric',month:'long',year:'numeric'});
+        if(date!==lastDate){ lastDate=date; area.insertAdjacentHTML('beforeend',`<div class="date-divider"><span>${date}</span></div>`); }
+        renderMsg(area,d,doc.id);
+        if(!firstLoad && d.senderEmail!==currentUser.email && !(d.readBy||[]).includes(currentUser.email)){
+          doc.ref.update({readBy:firebase.firestore.FieldValue.arrayUnion(currentUser.email)});
+          const m=getMember(d.senderEmail);
+          sendNotification(m.name, d.type==='image'?'📷 ส่งรูปภาพ':(d.text||'').substring(0,60), m.photoURL||'');
+        }
+      });
+      firstLoad=false;
+      if(wasAtBottom) area.scrollTop=area.scrollHeight;
+    });
+
+  // Listen typing
+  db.collection('rooms').doc(currentRoomId).collection('typing')
+    .onSnapshot(snap=>{
+      const others=[];
+      snap.forEach(doc=>{
+        if(doc.id!==currentUser.email && doc.data().typing) others.push(getMember(doc.id).name);
+      });
+      let typingEl=document.getElementById('typingIndicator');
+      if(others.length>0){
+        if(!typingEl){
+          typingEl=document.createElement('div');
+          typingEl.id='typingIndicator';
+          typingEl.className='msg-row them';
+          typingEl.style.padding='0 12px 4px';
+          typingEl.innerHTML=`<div class="avatar-sm"></div><div><div style="font-size:11px;color:var(--gray);margin-bottom:2px" id="typingName"></div><div class="typing-bubble"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div></div>`;
+          area.appendChild(typingEl);
+        }
+        document.getElementById('typingName').textContent=others.join(', ')+' กำลังพิมพ์...';
+        area.scrollTop=area.scrollHeight;
+      } else {
+        if(typingEl) typingEl.remove();
+      }
+    });
+}
+
+// ===== GROUP CALL =====
+async function startGroupCall(){
+  showToast('กำลังเริ่มสายกลุ่ม...');
+  // Notify all members via Firestore
+  const channel = 'group_'+Date.now();
+  await db.collection('groupCalls').doc(channel).set({
+    caller: currentUser.email,
+    channel, status:'calling',
+    members: Object.keys(MEMBERS_BASE),
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+  // Join as audio call
+  isVideoCall=false;
+  const m={name:'กลุ่มครอบครัว',emoji:'👨‍👩‍👧‍👦',photoURL:null};
+  showCallUI(m,false,'กำลังโทรกลุ่ม...');
+  try{
+    localStream=await navigator.mediaDevices.getUserMedia({audio:true});
+    peerConn=createPeer();
+    localStream.getTracks().forEach(t=>peerConn.addTrack(t,localStream));
+    showToast('เข้าร่วมสายกลุ่มแล้ว');
+    startCallTimer();
+  }catch(e){ showToast('ไม่ได้: '+e.message); hideCallUI(); }
+}
+
+// Request notification on login
+auth.onAuthStateChanged(u=>{ if(u) setTimeout(requestNotificationPermission,2000); });
 
 // ===== PWA =====
 // PWA manifest via blob

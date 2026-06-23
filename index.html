@@ -262,6 +262,23 @@ input,button,textarea{font-family:var(--font)}
   </div>
 </div>
 
+<!-- INCOMING CALL -->
+<div id="incomingCall" style="display:none;position:fixed;inset:0;background:linear-gradient(160deg,#1a1a2e,#0f3460);z-index:1000;flex-direction:column;align-items:center;justify-content:center;gap:20px">
+  <div id="incomingAvatar" style="width:100px;height:100px;border-radius:50%;font-size:48px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.15)"></div>
+  <div id="incomingName" style="color:#fff;font-size:26px;font-weight:700"></div>
+  <div id="incomingType" style="color:rgba(255,255,255,.7);font-size:15px">กำลังโทรหาคุณ...</div>
+  <div style="display:flex;gap:48px;margin-top:20px">
+    <button onclick="declineCall()" style="display:flex;flex-direction:column;align-items:center;gap:8px;background:none;border:none;color:#fff;cursor:pointer">
+      <div style="width:64px;height:64px;border-radius:50%;background:#FF3B30;display:flex;align-items:center;justify-content:center;font-size:28px">📵</div>
+      <span style="font-size:13px">ปฏิเสธ</span>
+    </button>
+    <button onclick="acceptCall()" style="display:flex;flex-direction:column;align-items:center;gap:8px;background:none;border:none;color:#fff;cursor:pointer">
+      <div style="width:64px;height:64px;border-radius:50%;background:#06C755;display:flex;align-items:center;justify-content:center;font-size:28px">📞</div>
+      <span style="font-size:13px">รับสาย</span>
+    </button>
+  </div>
+</div>
+
 <!-- VIDEO CALL -->
 <div id="videoContainer">
   <video id="remoteVideo" autoplay playsinline></video>
@@ -354,6 +371,40 @@ let isVideoCall = false;
 let callTimer = null;
 let callSeconds = 0;
 let remoteAudio = new Audio();
+
+// Ringtone using Web Audio API
+let audioCtx = null;
+let ringInterval = null;
+
+function playRingtone(outgoing=false){
+  stopRingtone();
+  try {
+    audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    const play = () => {
+      const freqs = outgoing ? [440,480] : [880,660,880,660];
+      let t = audioCtx.currentTime;
+      freqs.forEach((f,i) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.frequency.value = f;
+        osc.type = 'sine';
+        gain.gain.setValueAtTime(0, t + i*0.15);
+        gain.gain.linearRampToValueAtTime(0.3, t + i*0.15 + 0.05);
+        gain.gain.linearRampToValueAtTime(0, t + i*0.15 + 0.13);
+        osc.start(t + i*0.15);
+        osc.stop(t + i*0.15 + 0.14);
+      });
+    };
+    play();
+    ringInterval = setInterval(play, outgoing ? 3000 : 2000);
+  } catch(e){}
+}
+
+function stopRingtone(){
+  if(ringInterval){ clearInterval(ringInterval); ringInterval=null; }
+  if(audioCtx){ try{audioCtx.close();}catch(e){} audioCtx=null; }
+}
 
 // ===== AUTH =====
 auth.onAuthStateChanged(async user => {
@@ -544,17 +595,20 @@ function autoResize(el){ el.style.height='auto'; el.style.height=Math.min(el.scr
 function pickImage(){ document.getElementById('imgPicker').click(); }
 async function sendImage(input){
   const file=input.files[0]; if(!file) return;
+  if(file.size > 5*1024*1024){ showToast('ไฟล์ใหญ่เกิน 5MB'); input.value=''; return; }
   showToast('กำลังอัพโหลด...');
   try{
-    const ref=storage.ref(`chat/${currentRoomId}/${Date.now()}_${file.name}`);
-    await ref.put(file);
-    const url=await ref.getDownloadURL();
+    const fname = Date.now()+'_'+file.name.replace(/[^a-zA-Z0-9._]/g,'_');
+    const ref = storage.ref(`chat/${currentRoomId}/${fname}`);
+    const metadata = {contentType: file.type};
+    await ref.put(file, metadata);
+    const url = await ref.getDownloadURL();
     await db.collection('rooms').doc(currentRoomId).collection('messages').add({
       imageUrl:url, senderEmail:currentUser.email, type:'image',
       createdAt:firebase.firestore.FieldValue.serverTimestamp()
     });
     showToast('ส่งรูปแล้ว ✓');
-  }catch(e){ showToast('อัพโหลดไม่ได้'); }
+  }catch(e){ showToast('อัพโหลดไม่ได้: '+e.message); }
   input.value='';
 }
 function openViewer(src){ document.getElementById('viewerImg').src=src; document.getElementById('imgViewer').classList.add('active'); }
@@ -698,6 +752,7 @@ async function startCall(video=false){
   showCallUI(m,video,'กำลังโทร...');
 
   try{
+    playRingtone(true);
     localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:video});
     if(video) document.getElementById('localVideo').srcObject=localStream;
     peerConn=createPeer();
@@ -716,6 +771,7 @@ async function startCall(video=false){
       if(!d) return;
       if(d.answer&&peerConn&&!peerConn.currentRemoteDescription){
         await peerConn.setRemoteDescription(new RTCSessionDescription(d.answer));
+        stopRingtone();
         updateCallStatus('เชื่อมต่อแล้ว'); startCallTimer();
       }
       if(d.calleeCandidates){
@@ -752,6 +808,7 @@ function hideCallUI(){
 }
 
 async function endCall(){
+  stopRingtone();
   clearInterval(callTimer); callSeconds=0;
   if(localStream){ localStream.getTracks().forEach(t=>t.stop()); localStream=null; }
   if(peerConn){ peerConn.close(); peerConn=null; }
@@ -784,7 +841,20 @@ function toggleCam(){
   if(btn){ btn.querySelector('.icon').textContent=isCamOff?'📵':'📷'; }
 }
 
-function toggleSpeaker(){ showToast('ลำโพง: ขึ้นกับอุปกรณ์'); }
+async function toggleSpeaker(){
+  try {
+    if(remoteAudio.sinkId === '') {
+      if(remoteAudio.setSinkId) {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const speaker = devices.find(d=>d.kind==='audiooutput' && d.label.toLowerCase().includes('speaker'));
+        if(speaker) { await remoteAudio.setSinkId(speaker.deviceId); showToast('🔊 เปิดลำโพงแล้ว'); }
+        else { showToast('ไม่พบลำโพงภายนอก'); }
+      } else { showToast('เบราว์เซอร์นี้ไม่รองรับ'); }
+    } else {
+      await remoteAudio.setSinkId(''); showToast('🔇 ปิดลำโพง');
+    }
+  } catch(e){ showToast('ลำโพง: '+e.message); }
+}
 
 function startCallTimer(){
   callSeconds=0;
@@ -797,6 +867,8 @@ function startCallTimer(){
 }
 
 // ===== INCOMING CALLS =====
+let pendingCallData = null;
+
 function listenIncomingCalls(){
   if(!currentUser) return;
   db.collection('calls').where('callee','==',currentUser.email).where('status','==','calling')
@@ -804,17 +876,40 @@ function listenIncomingCalls(){
       snap.docChanges().forEach(change=>{
         if(change.type==='added'){
           const d=change.doc.data();
-          const caller=getMember(d.caller);
-          const type=d.isVideo?'วีดีโอคอล':'โทรศัพท์';
-          if(confirm(`📞 ${caller.name} กำลัง${type}\nรับสายไหม?`)){
-            currentRoomId=d.channel;
-            answerCall(d);
-          } else {
-            change.doc.ref.update({status:'declined'});
-          }
+          pendingCallData = {...d, docRef: change.doc.ref};
+          currentRoomId = d.channel;
+          const caller = getMember(d.caller);
+          const ic = document.getElementById('incomingCall');
+          const av = document.getElementById('incomingAvatar');
+          if(caller.photoURL) av.innerHTML=`<img src="${caller.photoURL}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`;
+          else av.textContent = caller.emoji;
+          document.getElementById('incomingName').textContent = caller.name;
+          document.getElementById('incomingType').textContent = d.isVideo ? '📹 วีดีโอคอล' : '📞 โทรศัพท์';
+          ic.style.display = 'flex';
+          playRingtone(false);
+        }
+        if(change.type==='removed' || (change.type==='modified' && change.doc.data().status==='ended')){
+          hideIncomingCall();
         }
       });
     });
+}
+
+function hideIncomingCall(){
+  document.getElementById('incomingCall').style.display='none';
+  stopRingtone();
+  pendingCallData=null;
+}
+
+function declineCall(){
+  if(pendingCallData?.docRef) pendingCallData.docRef.update({status:'declined'});
+  hideIncomingCall();
+}
+
+function acceptCall(){
+  if(!pendingCallData) return;
+  hideIncomingCall();
+  answerCall(pendingCallData);
 }
 
 async function answerCall(d){

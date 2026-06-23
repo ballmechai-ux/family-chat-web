@@ -82,7 +82,7 @@ input,button,textarea{font-family:var(--font)}
 .msg-row.me{flex-direction:row-reverse}
 .avatar-sm{width:28px;height:28px;border-radius:50%;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden}
 .avatar-sm img{width:100%;height:100%;object-fit:cover}
-.bubble{max-width:75%;min-width:60px;padding:9px 13px;border-radius:var(--radius);font-size:15px;line-height:1.6;word-break:break-word;white-space:pre-wrap;position:relative;display:inline-block}
+.bubble{max-width:75%;padding:10px 14px;border-radius:var(--radius);font-size:15px;line-height:1.6;word-break:break-word;white-space:pre-wrap;position:relative}
 .msg-row.them .bubble{background:var(--bubble-them);border-bottom-left-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,.1)}
 .msg-row.me .bubble{background:var(--bubble-me);border-bottom-right-radius:4px}
 .bubble img{max-width:100%;border-radius:10px;display:block;cursor:pointer;white-space:normal}
@@ -599,13 +599,23 @@ function renderMsg(area,d){
   const m = getMember(d.senderEmail);
   const row = document.createElement('div');
   row.className='msg-row '+(me?'me':'them');
+  if(d.type==='system'){
+    const sysDiv = document.createElement('div');
+    sysDiv.style.cssText='text-align:center;color:var(--gray);font-size:12px;margin:4px 0;padding:4px 12px;background:rgba(0,0,0,.06);border-radius:12px;display:inline-block;align-self:center';
+    sysDiv.textContent = d.text||'';
+    const wrap = document.createElement('div');
+    wrap.style.cssText='display:flex;justify-content:center;width:100%';
+    wrap.appendChild(sysDiv);
+    area.appendChild(wrap);
+    return;
+  }
   let bubble='';
   if(d.type==='image') bubble=`<img src="${d.imageUrl}" onclick="openViewer('${d.imageUrl}')" loading="lazy"/>`;
   else bubble=escHtml(d.text||'');
   const time = d.createdAt?fmtTime(d.createdAt.toDate()):'';
   row.innerHTML=`
     ${!me?`<div class="avatar-sm" style="background:${m.color}20">${m.photoURL?`<img src="${m.photoURL}"/>`:(m.emoji)}</div>`:''}
-    <div style="display:flex;flex-direction:column;align-items:${me?'flex-end':'flex-start'};gap:2px;max-width:80%">
+    <div style="display:flex;flex-direction:column;align-items:${me?'flex-end':'flex-start'};gap:2px;flex:1;min-width:0">
       ${!me?`<div class="msg-sender">${m.name}</div>`:''}
       <div class="bubble">${bubble}</div>
     </div>
@@ -878,7 +888,9 @@ function hideCallUI(){
 
 async function endCall(){
   stopRingtone();
-  clearInterval(callTimer); callSeconds=0;
+  clearInterval(callTimer);
+  const wasConnected = callSeconds > 0;
+  callSeconds=0;
   if(localStream){ localStream.getTracks().forEach(t=>t.stop()); localStream=null; }
   if(peerConn){ peerConn.close(); peerConn=null; }
   remoteAudio.srcObject=null;
@@ -887,7 +899,33 @@ async function endCall(){
   if(rv) rv.srcObject=null;
   if(lv) lv.srcObject=null;
   hideCallUI();
-  if(currentRoomId) db.collection('calls').doc(currentRoomId).update({status:'ended'}).catch(()=>{});
+  if(currentRoomId){
+    try{
+      const snap = await db.collection('calls').doc(currentRoomId).get();
+      const d = snap.data();
+      if(d && d.status==='calling'){
+        // ยังไม่ได้รับสาย = สายไม่ได้รับ
+        await snap.ref.update({status:'missed'});
+        // บันทึก missed call ใน messages
+        await db.collection('rooms').doc(currentRoomId).collection('messages').add({
+          text:'📵 สายไม่ได้รับ',
+          senderEmail: currentUser.email,
+          type:'system',
+          createdAt:firebase.firestore.FieldValue.serverTimestamp()
+        });
+      } else {
+        await snap.ref.update({status:'ended'});
+        if(!wasConnected){
+          await db.collection('rooms').doc(currentRoomId).collection('messages').add({
+            text:'📞 วางสายแล้ว',
+            senderEmail: currentUser.email,
+            type:'system',
+            createdAt:firebase.firestore.FieldValue.serverTimestamp()
+          });
+        }
+      }
+    }catch(e){}
+  }
 }
 
 function toggleMute(){
@@ -970,8 +1008,19 @@ function hideIncomingCall(){
   pendingCallData=null;
 }
 
-function declineCall(){
-  if(pendingCallData?.docRef) pendingCallData.docRef.update({status:'declined'});
+async function declineCall(){
+  if(pendingCallData?.docRef){
+    await pendingCallData.docRef.update({status:'declined'});
+    // แจ้งในแชทว่าปฏิเสธสาย
+    if(currentRoomId){
+      db.collection('rooms').doc(currentRoomId).collection('messages').add({
+        text:'📵 ปฏิเสธสาย',
+        senderEmail: currentUser.email,
+        type:'system',
+        createdAt:firebase.firestore.FieldValue.serverTimestamp()
+      }).catch(()=>{});
+    }
+  }
   hideIncomingCall();
 }
 
@@ -1000,6 +1049,13 @@ async function answerCall(d){
       for(const c of d.callerCandidates){ try{await peerConn.addIceCandidate(new RTCIceCandidate(c));}catch(e){} }
     }
     startCallTimer();
+    // แจ้งในแชทว่ารับสายแล้ว
+    db.collection('rooms').doc(d.channel).collection('messages').add({
+      text:'📞 รับสายแล้ว',
+      senderEmail: currentUser.email,
+      type:'system',
+      createdAt:firebase.firestore.FieldValue.serverTimestamp()
+    }).catch(()=>{});
   }catch(e){ showToast('รับสายไม่ได้: '+e.message); hideCallUI(); }
 }
 

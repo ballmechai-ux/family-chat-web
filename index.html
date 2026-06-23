@@ -376,28 +376,65 @@ let remoteAudio = new Audio();
 let audioCtx = null;
 let ringInterval = null;
 
+function playTone(freq, duration, volume=0.4){
+  if(!audioCtx) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  osc.frequency.value = freq;
+  osc.type = 'sine';
+  const t = audioCtx.currentTime;
+  gain.gain.setValueAtTime(0, t);
+  gain.gain.linearRampToValueAtTime(volume, t+0.02);
+  gain.gain.setValueAtTime(volume, t+duration-0.02);
+  gain.gain.linearRampToValueAtTime(0, t+duration);
+  osc.start(t); osc.stop(t+duration);
+}
+
+function playConnectedSound(){
+  // เสียงตูดยาว = โทรติด
+  try {
+    audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    playTone(480, 0.8, 0.4);
+    stopRingtone();
+  } catch(e){}
+}
+
+function playBusySound(){
+  // เสียงบีบสั้นๆ = ไม่ติด
+  stopRingtone();
+  try {
+    audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    let count = 0;
+    const beep = () => {
+      if(!audioCtx) return;
+      playTone(620, 0.15, 0.3);
+      count++;
+      if(count < 4) setTimeout(beep, 300);
+    };
+    beep();
+  } catch(e){}
+}
+
 function playRingtone(outgoing=false){
   stopRingtone();
   try {
     audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-    const play = () => {
-      const freqs = outgoing ? [440,480] : [880,660,880,660];
-      let t = audioCtx.currentTime;
-      freqs.forEach((f,i) => {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.connect(gain); gain.connect(audioCtx.destination);
-        osc.frequency.value = f;
-        osc.type = 'sine';
-        gain.gain.setValueAtTime(0, t + i*0.15);
-        gain.gain.linearRampToValueAtTime(0.3, t + i*0.15 + 0.05);
-        gain.gain.linearRampToValueAtTime(0, t + i*0.15 + 0.13);
-        osc.start(t + i*0.15);
-        osc.stop(t + i*0.15 + 0.14);
-      });
-    };
-    play();
-    ringInterval = setInterval(play, outgoing ? 3000 : 2000);
+    if(outgoing){
+      // เสียงรอสาย — ตูดยาวทุก 3 วิ
+      const ring = () => { playTone(440, 1.0, 0.35); setTimeout(()=>playTone(480, 1.0, 0.35), 0); };
+      ring();
+      ringInterval = setInterval(ring, 3000);
+    } else {
+      // เสียงเรียกเข้า — สองเสียงสลับ
+      const ring = () => {
+        playTone(880, 0.2, 0.4);
+        setTimeout(()=>playTone(660, 0.2, 0.4), 250);
+        setTimeout(()=>playTone(880, 0.2, 0.4), 500);
+      };
+      ring();
+      ringInterval = setInterval(ring, 2000);
+    }
   } catch(e){}
 }
 
@@ -596,12 +633,15 @@ function pickImage(){ document.getElementById('imgPicker').click(); }
 async function sendImage(input){
   const file=input.files[0]; if(!file) return;
   if(file.size > 5*1024*1024){ showToast('ไฟล์ใหญ่เกิน 5MB'); input.value=''; return; }
-  showToast('กำลังอัพโหลด...');
   try{
     const fname = Date.now()+'_'+file.name.replace(/[^a-zA-Z0-9._]/g,'_');
     const ref = storage.ref(`chat/${currentRoomId}/${fname}`);
-    const metadata = {contentType: file.type};
-    await ref.put(file, metadata);
+    const task = ref.put(file, {contentType: file.type});
+    task.on('state_changed', snap => {
+      const pct = Math.round((snap.bytesTransferred/snap.totalBytes)*100);
+      showToast('อัพโหลด '+pct+'%');
+    });
+    await task;
     const url = await ref.getDownloadURL();
     await db.collection('rooms').doc(currentRoomId).collection('messages').add({
       imageUrl:url, senderEmail:currentUser.email, type:'image',
@@ -771,13 +811,14 @@ async function startCall(video=false){
       if(!d) return;
       if(d.answer&&peerConn&&!peerConn.currentRemoteDescription){
         await peerConn.setRemoteDescription(new RTCSessionDescription(d.answer));
-        stopRingtone();
+        playConnectedSound();
         updateCallStatus('เชื่อมต่อแล้ว'); startCallTimer();
       }
       if(d.calleeCandidates){
         for(const c of d.calleeCandidates){ try{await peerConn.addIceCandidate(new RTCIceCandidate(c));}catch(e){} }
       }
-      if(d.status==='ended'||d.status==='declined') endCall();
+      if(d.status==='declined'){ playBusySound(); setTimeout(endCall,1200); }
+      else if(d.status==='ended') endCall();
     });
   }catch(e){ showToast('โทรไม่ได้: '+e.message); hideCallUI(); }
 }

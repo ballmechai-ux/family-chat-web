@@ -632,17 +632,35 @@ function autoResize(el){ el.style.height='auto'; el.style.height=Math.min(el.scr
 function pickImage(){ document.getElementById('imgPicker').click(); }
 async function sendImage(input){
   const file=input.files[0]; if(!file) return;
-  if(file.size > 5*1024*1024){ showToast('ไฟล์ใหญ่เกิน 5MB'); input.value=''; return; }
+  if(file.size > 32*1024*1024){ showToast('ไฟล์ใหญ่เกิน 32MB'); input.value=''; return; }
   try{
-    const fname = Date.now()+'_'+file.name.replace(/[^a-zA-Z0-9._]/g,'_');
-    const ref = storage.ref(`chat/${currentRoomId}/${fname}`);
-    const task = ref.put(file, {contentType: file.type});
-    task.on('state_changed', snap => {
-      const pct = Math.round((snap.bytesTransferred/snap.totalBytes)*100);
-      showToast('อัพโหลด '+pct+'%');
+    showToast('อัพโหลด 0%');
+    const base64 = await new Promise((res,rej)=>{
+      const r = new FileReader();
+      r.onload = ()=> res(r.result.split(',')[1]);
+      r.onerror = rej;
+      r.readAsDataURL(file);
     });
-    await task;
-    const url = await ref.getDownloadURL();
+    const form = new FormData();
+    form.append('key','c23ac8f6600c2ddd7a3c8ca33fb9caa8');
+    form.append('image', base64);
+    form.append('name', Date.now()+'');
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST','https://api.imgbb.com/1/upload');
+    xhr.upload.onprogress = e => {
+      if(e.lengthComputable){
+        const pct = Math.round((e.loaded/e.total)*100);
+        showToast('อัพโหลด '+pct+'%');
+      }
+    };
+    const result = await new Promise((res,rej)=>{
+      xhr.onload = ()=> res(JSON.parse(xhr.responseText));
+      xhr.onerror = rej;
+      xhr.send(form);
+    });
+    if(!result.success) throw new Error(result.error?.message||'upload failed');
+    const url = result.data.url;
     await db.collection('rooms').doc(currentRoomId).collection('messages').add({
       imageUrl:url, senderEmail:currentUser.email, type:'image',
       createdAt:firebase.firestore.FieldValue.serverTimestamp()
@@ -740,16 +758,26 @@ async function saveNewName(){
 
 async function uploadAvatar(input){
   const file=input.files[0]; if(!file) return;
-  showToast('กำลังอัพโหลดรูป...');
+  showToast('กำลังอัพโหลดรูปโปรไฟล์...');
   try{
-    const ref=storage.ref(`avatars/${currentUser.email}`);
-    await ref.put(file);
-    const url=await ref.getDownloadURL();
+    const base64 = await new Promise((res,rej)=>{
+      const r = new FileReader();
+      r.onload = ()=> res(r.result.split(',')[1]);
+      r.onerror = rej;
+      r.readAsDataURL(file);
+    });
+    const form = new FormData();
+    form.append('key','c23ac8f6600c2ddd7a3c8ca33fb9caa8');
+    form.append('image', base64);
+    const resp = await fetch('https://api.imgbb.com/1/upload',{method:'POST',body:form});
+    const result = await resp.json();
+    if(!result.success) throw new Error('upload failed');
+    const url = result.data.url;
     await saveProfile(currentUser.email,{photoURL:url});
     loadProfile();
     loadChatList();
     showToast('เปลี่ยนรูปโปรไฟล์แล้ว ✓');
-  }catch(e){ showToast('อัพโหลดไม่ได้'); }
+  }catch(e){ showToast('อัพโหลดไม่ได้: '+e.message); }
   input.value='';
 }
 

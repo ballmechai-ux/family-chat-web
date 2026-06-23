@@ -24,6 +24,11 @@
   --danger:#FF3B30;--radius:18px;
   --font:'Noto Sans Thai',sans-serif;
 }
+body.dark{
+  --bg:#1a1a1a;--white:#2a2a2a;--black:#f0f0f0;
+  --gray:#aaa;--gray-light:#333;--gray-mid:#555;
+  --bubble-me:#1a472a;--bubble-them:#2a2a2a;
+}
 body{font-family:var(--font);background:var(--bg);height:100dvh;overflow:hidden;display:flex;flex-direction:column}
 input,button,textarea{font-family:var(--font)}
 .screen{display:none;flex-direction:column;height:100dvh;position:absolute;inset:0;background:var(--bg)}
@@ -163,6 +168,34 @@ input,button,textarea{font-family:var(--font)}
 @keyframes spin{to{transform:rotate(360deg)}}
 .loading-center{flex:1;display:flex;align-items:center;justify-content:center}
 ::-webkit-scrollbar{width:0}
+/* Typing indicator */
+.typing-bubble{display:flex;align-items:center;gap:4px;padding:10px 14px;background:var(--bubble-them);border-radius:var(--radius);border-bottom-left-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.typing-dot{width:7px;height:7px;border-radius:50%;background:var(--gray);animation:typingAnim 1.2s infinite}
+.typing-dot:nth-child(2){animation-delay:.2s}
+.typing-dot:nth-child(3){animation-delay:.4s}
+@keyframes typingAnim{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-6px);opacity:1}}
+/* Read receipt */
+.read-tick{font-size:10px;color:var(--green);margin-left:3px}
+/* Swipe reply */
+.bubble-wrap{position:relative}
+/* Status badge */
+.status-badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;margin-top:4px}
+/* Album grid */
+.album-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px}
+.album-item{aspect-ratio:1;overflow:hidden;cursor:pointer;border-radius:4px;background:var(--gray-light)}
+.album-item img{width:100%;height:100%;object-fit:cover}
+/* Group chat */
+.group-msg-area{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:6px}
+/* Calendar */
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-top:8px}
+.cal-day{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px;border-radius:8px;cursor:pointer;position:relative}
+.cal-day.today{background:var(--green);color:#fff;font-weight:700}
+.cal-day.has-event::after{content:'';width:5px;height:5px;border-radius:50%;background:var(--danger);position:absolute;bottom:3px}
+.cal-day.other-month{color:var(--gray-mid)}
+.cal-header{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:4px}
+.cal-header span{text-align:center;font-size:11px;color:var(--gray);font-weight:600}
+.event-item{background:var(--white);border-radius:12px;padding:12px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.06);display:flex;gap:12px;align-items:center}
+.event-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
 </style>
 </head>
 <body>
@@ -185,7 +218,10 @@ input,button,textarea{font-family:var(--font)}
   <div class="tab-content">
     <!-- CHATS -->
     <div class="tab-pane active" id="tabChats">
-      <div class="top-bar"><h2>💬 แชท</h2></div>
+      <div class="top-bar" style="justify-content:space-between">
+        <h2>💬 แชท</h2>
+        <button onclick="openGroupRoom()" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:20px;padding:6px 12px;font-size:13px;cursor:pointer">กลุ่ม 👨‍👩‍👧‍👦</button>
+      </div>
       <div class="chat-list" id="chatList"><div class="loading-center"><div class="spinner"></div></div></div>
     </div>
     <!-- MEMBERS -->
@@ -193,6 +229,24 @@ input,button,textarea{font-family:var(--font)}
       <div class="top-bar"><h2>👨‍👩‍👧‍👦 สมาชิก</h2></div>
       <div style="overflow-y:auto;flex:1" id="memberList"><div class="loading-center"><div class="spinner"></div></div></div>
     </div>
+    <!-- GROUP -->
+    <div class="tab-pane" id="tabGroup">
+      <div class="top-bar" style="justify-content:space-between">
+        <h2>👨‍👩‍👧‍👦 แชทกลุ่ม</h2>
+      </div>
+      <div style="overflow-y:auto;flex:1" id="groupArea">
+        <div class="loading-center"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+    <!-- ALBUM -->
+    <div class="tab-pane" id="tabAlbum">
+      <div class="top-bar"><h2>📸 อัลบั้มครอบครัว</h2></div>
+      <div style="overflow-y:auto;flex:1;padding:12px" id="albumArea">
+        <div class="loading-center"><div class="spinner"></div></div>
+      </div>
+    </div>
+
     <!-- PROFILE -->
     <div class="tab-pane" id="tabProfile">
       <div class="top-bar"><h2>⚙️ โปรไฟล์</h2></div>
@@ -205,6 +259,12 @@ input,button,textarea{font-family:var(--font)}
     </button>
     <button class="tab-btn" onclick="switchTab('tabMembers',this)">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>สมาชิก
+    </button>
+    <button class="tab-btn" onclick="switchTab('tabGroup',this)">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg>กลุ่ม
+    </button>
+    <button class="tab-btn" onclick="switchTab('tabAlbum',this)">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>อัลบั้ม
     </button>
     <button class="tab-btn" onclick="switchTab('tabProfile',this)">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>โปรไฟล์
@@ -234,12 +294,32 @@ input,button,textarea{font-family:var(--font)}
     <button class="inp-btn" onclick="pickImage()">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
     </button>
-    <textarea id="msgInput" placeholder="พิมพ์ข้อความ..." rows="1" oninput="autoResize(this)" onkeydown="handleKey(event)"></textarea>
+    <textarea id="msgInput" placeholder="พิมพ์ข้อความ..." rows="1" oninput="autoResize(this);onTyping()" onkeydown="handleKey(event)"></textarea>
     <button class="send-btn" onclick="sendMsg()">
       <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
     </button>
   </div>
   <input type="file" id="imgPicker" accept="image/*" style="display:none" onchange="sendImage(this)"/>
+</div>
+
+<!-- GROUP CHAT ROOM -->
+<div class="screen" id="groupRoomScreen" style="z-index:10">
+  <div class="chat-room-bar">
+    <button style="background:none;border:none;color:#fff;font-size:22px;cursor:pointer;padding:4px" onclick="closeGroupRoom()">‹</button>
+    <div class="avatar" style="width:38px;height:38px;font-size:20px;background:rgba(255,255,255,.2)">👨‍👩‍👧‍👦</div>
+    <div class="room-info" style="margin-left:8px"><div class="name">ครอบครัว Mechai</div><div class="status" id="groupMemberCount"></div></div>
+  </div>
+  <div class="group-msg-area" id="groupMsgArea"></div>
+  <div class="input-area">
+    <button class="inp-btn" onclick="pickGroupImage()">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+    </button>
+    <textarea id="groupMsgInput" placeholder="พิมพ์ข้อความ..." rows="1" oninput="autoResize(this)" onkeydown="handleGroupKey(event)"></textarea>
+    <button class="send-btn" onclick="sendGroupMsg()">
+      <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+    </button>
+  </div>
+  <input type="file" id="groupImgPicker" accept="image/*" style="display:none" onchange="sendGroupImage(this)"/>
 </div>
 
 <!-- CALL OVERLAY (audio) -->
@@ -296,6 +376,33 @@ input,button,textarea{font-family:var(--font)}
   </div>
   <div style="position:absolute;top:16px;left:16px;color:#fff;font-size:14px;font-weight:700;text-shadow:0 1px 4px rgba(0,0,0,.5)" id="videoCallName"></div>
   <div style="position:absolute;top:38px;left:16px;color:rgba(255,255,255,.8);font-size:12px" id="videoCallStatus"></div>
+</div>
+
+<!-- STATUS MODAL -->
+<div class="modal-overlay" id="statusModal">
+  <div class="modal-box">
+    <div class="modal-title">ตั้งสถานะ</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+      <button onclick="setStatus('🟢','ออนไลน์','#06C755')" style="padding:12px;border:1.5px solid #E5E5E5;border-radius:10px;background:none;cursor:pointer;font-size:14px">🟢 ออนไลน์</button>
+      <button onclick="setStatus('🔴','อย่ารบกวน','#FF3B30')" style="padding:12px;border:1.5px solid #E5E5E5;border-radius:10px;background:none;cursor:pointer;font-size:14px">🔴 อย่ารบกวน</button>
+      <button onclick="setStatus('🟡','กำลังทำงาน','#FF9500')" style="padding:12px;border:1.5px solid #E5E5E5;border-radius:10px;background:none;cursor:pointer;font-size:14px">🟡 กำลังทำงาน</button>
+      <button onclick="setStatus('💤','ไม่อยู่','#8A8A8A')" style="padding:12px;border:1.5px solid #E5E5E5;border-radius:10px;background:none;cursor:pointer;font-size:14px">💤 ไม่อยู่</button>
+    </div>
+    <button class="modal-btn-cancel" onclick="closeModal('statusModal')">ยกเลิก</button>
+  </div>
+</div>
+
+<!-- ADD EVENT MODAL -->
+<div class="modal-overlay" id="addEventModal">
+  <div class="modal-box">
+    <div class="modal-title">เพิ่มนัดหมาย</div>
+    <input class="modal-input" id="eventTitle" placeholder="ชื่อนัดหมาย"/>
+    <input class="modal-input" id="eventDate" type="date"/>
+    <input class="modal-input" id="eventTime" type="time"/>
+    <textarea class="modal-input" id="eventNote" placeholder="บันทึก (ไม่บังคับ)" rows="2" style="resize:none"></textarea>
+    <button class="modal-btn" onclick="saveEvent()">บันทึก</button>
+    <button class="modal-btn-cancel" onclick="closeModal('addEventModal')">ยกเลิก</button>
+  </div>
 </div>
 
 <!-- EDIT NAME MODAL -->
@@ -504,6 +611,8 @@ function switchTab(tabId, btn){
   btn.classList.add('active');
   if(tabId==='tabMembers') loadMembers();
   if(tabId==='tabProfile') loadProfile();
+  if(tabId==='tabGroup') loadCalendar();
+  if(tabId==='tabAlbum') loadAlbum();
 }
 
 // ===== CHAT LIST =====
@@ -581,6 +690,7 @@ function listenMessages(){
   unsubMessages = db.collection('rooms').doc(currentRoomId)
     .collection('messages').orderBy('createdAt','asc')
     .onSnapshot(snap => {
+      const wasAtBottom = area.scrollHeight - area.scrollTop - area.clientHeight < 60;
       area.innerHTML='';
       let lastDate='';
       snap.forEach(doc => {
@@ -588,13 +698,43 @@ function listenMessages(){
         if(!d.createdAt) return;
         const date = d.createdAt.toDate().toLocaleDateString('th-TH',{day:'numeric',month:'long',year:'numeric'});
         if(date!==lastDate){ lastDate=date; area.insertAdjacentHTML('beforeend',`<div class="date-divider"><span>${date}</span></div>`); }
-        renderMsg(area,d);
+        renderMsg(area,d,doc.id);
+        // mark as read
+        if(d.senderEmail!==currentUser.email && !(d.readBy||[]).includes(currentUser.email)){
+          doc.ref.update({readBy:firebase.firestore.FieldValue.arrayUnion(currentUser.email)});
+        }
       });
-      area.scrollTop=area.scrollHeight;
+      if(wasAtBottom) area.scrollTop=area.scrollHeight;
+    });
+
+  // Listen typing
+  db.collection('rooms').doc(currentRoomId).collection('typing')
+    .onSnapshot(snap=>{
+      const others = [];
+      snap.forEach(doc=>{
+        if(doc.id!==currentUser.email && doc.data().typing){
+          others.push(getMember(doc.id).name);
+        }
+      });
+      let typingEl = document.getElementById('typingIndicator');
+      if(others.length>0){
+        if(!typingEl){
+          typingEl = document.createElement('div');
+          typingEl.id='typingIndicator';
+          typingEl.className='msg-row them';
+          typingEl.style.padding='0 12px 4px';
+          typingEl.innerHTML=`<div class="avatar-sm"></div><div><div style="font-size:11px;color:var(--gray);margin-bottom:2px" id="typingName"></div><div class="typing-bubble"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div></div>`;
+          area.appendChild(typingEl);
+        }
+        document.getElementById('typingName').textContent = others.join(', ')+' กำลังพิมพ์...';
+        area.scrollTop=area.scrollHeight;
+      } else {
+        if(typingEl) typingEl.remove();
+      }
     });
 }
 
-function renderMsg(area,d){
+function renderMsg(area,d,docId=""){
   const me = d.senderEmail===currentUser.email;
   const m = getMember(d.senderEmail);
   const row = document.createElement('div');
@@ -613,14 +753,47 @@ function renderMsg(area,d){
   if(d.type==='image') bubble=`<img src="${d.imageUrl}" onclick="openViewer('${d.imageUrl}')" loading="lazy"/>`;
   else bubble=escHtml(d.text||'');
   const time = d.createdAt?fmtTime(d.createdAt.toDate()):'';
+  const readBy = d.readBy||[];
+  const isRead = me && readBy.some(e=>e!==currentUser.email);
   row.innerHTML=`
     ${!me?`<div class="avatar-sm" style="background:${m.color}20">${m.photoURL?`<img src="${m.photoURL}"/>`:(m.emoji)}</div>`:''}
     <div style="display:flex;flex-direction:column;align-items:${me?'flex-end':'flex-start'};gap:2px;flex:1;min-width:0">
       ${!me?`<div class="msg-sender">${m.name}</div>`:''}
-      <div class="bubble">${bubble}</div>
+      <div class="bubble" data-id="${docId||''}" data-me="${me}">${bubble}</div>
     </div>
-    <div class="msg-time">${time}</div>`;
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0">
+      <div class="msg-time">${time}</div>
+      ${me?`<div class="read-tick">${isRead?'✓✓':''}</div>`:''}
+    </div>`;
+
+  // Long press to delete
+  if(me && docId){
+    const bubbleEl = row.querySelector('.bubble');
+    let pressTimer;
+    bubbleEl.addEventListener('touchstart',()=>{
+      pressTimer=setTimeout(()=>{
+        if(confirm('ลบข้อความนี้?')){
+          db.collection('rooms').doc(currentRoomId).collection('messages').doc(docId).delete();
+        }
+      },600);
+    });
+    bubbleEl.addEventListener('touchend',()=>clearTimeout(pressTimer));
+    bubbleEl.addEventListener('touchmove',()=>clearTimeout(pressTimer));
+  }
   area.appendChild(row);
+}
+
+let typingTimeout = null;
+
+function onTyping(){
+  if(!currentRoomId||!currentUser) return;
+  db.collection('rooms').doc(currentRoomId).collection('typing').doc(currentUser.email).set({
+    typing:true, updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+  });
+  clearTimeout(typingTimeout);
+  typingTimeout = setTimeout(()=>{
+    db.collection('rooms').doc(currentRoomId).collection('typing').doc(currentUser.email).set({typing:false});
+  }, 2000);
 }
 
 async function sendMsg(){
@@ -628,9 +801,12 @@ async function sendMsg(){
   const text=inp.value.trim();
   if(!text||!currentRoomId) return;
   inp.value=''; inp.style.height='auto';
+  // stop typing
+  db.collection('rooms').doc(currentRoomId).collection('typing').doc(currentUser.email).set({typing:false});
   try{
     await db.collection('rooms').doc(currentRoomId).collection('messages').add({
       text, senderEmail:currentUser.email, type:'text',
+      readBy:[currentUser.email],
       createdAt:firebase.firestore.FieldValue.serverTimestamp()
     });
   }catch(e){ showToast('ส่งไม่ได้'); }
@@ -724,6 +900,8 @@ function loadProfile(){
   const area=document.getElementById('profileArea');
   if(!currentUser) return;
   const m=getMember(currentUser.email);
+  const prof=userProfiles[currentUser.email]||{};
+  const st=prof.status||null;
   area.innerHTML=`
     <div class="profile-card">
       <div class="profile-avatar-wrap">
@@ -731,12 +909,23 @@ function loadProfile(){
         <button class="edit-avatar-btn" onclick="document.getElementById('avatarPicker').click()">📷</button>
       </div>
       <div class="profile-name" id="profileNameDisplay">${m.name}</div>
+      <div id="profileStatusDisplay" style="margin-top:2px">${st?`<span class="status-badge" style="background:${st.color}22;color:${st.color}">${st.emoji} ${st.text}</span>`:''}</div>
       <div class="profile-email">${currentUser.email}</div>
     </div>
     <div class="setting-group">
       <div class="setting-item" onclick="openEditName()">
         <div class="setting-icon" style="background:#E8F5E9">✏️</div>
         <div class="setting-label">เปลี่ยนชื่อ</div>
+        <div class="setting-arrow">›</div>
+      </div>
+      <div class="setting-item" onclick="document.getElementById('statusModal').classList.add('active')">
+        <div class="setting-icon" style="background:#FFF9C4">💬</div>
+        <div class="setting-label">ตั้งสถานะ</div>
+        <div class="setting-arrow">›</div>
+      </div>
+      <div class="setting-item" onclick="toggleDark()">
+        <div class="setting-icon" style="background:#E3F2FD" id="darkIcon">🌙</div>
+        <div class="setting-label" id="darkLabel">โหมดกลางคืน</div>
         <div class="setting-arrow">›</div>
       </div>
       <div class="setting-item" onclick="shareApp()">
@@ -797,6 +986,18 @@ function shareApp(){
   if(navigator.share) navigator.share({title:'Family Chat',url});
   else { navigator.clipboard.writeText(url); showToast('คัดลอก URL แล้ว'); }
 }
+
+function toggleDark(){
+  const isDark = document.body.classList.toggle('dark');
+  localStorage.setItem('darkMode', isDark?'1':'0');
+  const icon=document.getElementById('darkIcon');
+  const label=document.getElementById('darkLabel');
+  if(icon) icon.textContent = isDark?'☀️':'🌙';
+  if(label) label.textContent = isDark?'โหมดกลางวัน':'โหมดกลางคืน';
+  showToast(isDark?'🌙 โหมดกลางคืน':'☀️ โหมดกลางวัน');
+}
+// Apply saved dark mode
+if(localStorage.getItem('darkMode')==='1') document.body.classList.add('dark');
 async function logout(){ updatePresence(false); await auth.signOut(); showScreen('loginScreen'); }
 
 // ===== WebRTC CALL =====
@@ -1068,6 +1269,225 @@ function showToast(msg){
   t.textContent=msg; t.classList.add('show');
   clearTimeout(toastTimer);
   toastTimer=setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// ===== GROUP CHAT =====
+let unsubGroup = null;
+
+function openGroupRoom(){
+  showScreen('groupRoomScreen');
+  const members = Object.keys(MEMBERS_BASE);
+  document.getElementById('groupMemberCount').textContent = members.length + ' สมาชิก';
+  loadGroupMessages();
+}
+
+function closeGroupRoom(){
+  if(unsubGroup){ unsubGroup(); unsubGroup=null; }
+  showScreen('mainScreen');
+}
+
+function loadGroupMessages(){
+  const area = document.getElementById('groupMsgArea');
+  area.innerHTML = '<div class="loading-center"><div class="spinner"></div></div>';
+  if(unsubGroup) unsubGroup();
+  unsubGroup = db.collection('groupChat').orderBy('createdAt','asc')
+    .onSnapshot(snap=>{
+      area.innerHTML='';
+      let lastDate='';
+      snap.forEach(doc=>{
+        const d=doc.data();
+        if(!d.createdAt) return;
+        const date=d.createdAt.toDate().toLocaleDateString('th-TH',{day:'numeric',month:'long',year:'numeric'});
+        if(date!==lastDate){ lastDate=date; area.insertAdjacentHTML('beforeend',`<div class="date-divider"><span>${date}</span></div>`); }
+        renderMsg(area,d,doc.id);
+      });
+      area.scrollTop=area.scrollHeight;
+    });
+}
+
+async function sendGroupMsg(){
+  const inp=document.getElementById('groupMsgInput');
+  const text=inp.value.trim();
+  if(!text) return;
+  inp.value=''; inp.style.height='auto';
+  await db.collection('groupChat').add({
+    text, senderEmail:currentUser.email, type:'text',
+    readBy:[currentUser.email],
+    createdAt:firebase.firestore.FieldValue.serverTimestamp()
+  });
+}
+
+function handleGroupKey(e){ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendGroupMsg();} }
+function pickGroupImage(){ document.getElementById('groupImgPicker').click(); }
+
+async function sendGroupImage(input){
+  const file=input.files[0]; if(!file) return;
+  showToast('กำลังอัพโหลด...');
+  try{
+    const base64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});
+    const form=new FormData();
+    form.append('key','c23ac8f6600c2ddd7a3c8ca33fb9caa8');
+    form.append('image',base64);
+    const resp=await fetch('https://api.imgbb.com/1/upload',{method:'POST',body:form});
+    const result=await resp.json();
+    if(!result.success) throw new Error('failed');
+    await db.collection('groupChat').add({
+      imageUrl:result.data.url, senderEmail:currentUser.email, type:'image',
+      createdAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    // also add to album
+    await db.collection('album').add({
+      url:result.data.url, senderEmail:currentUser.email,
+      createdAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    showToast('ส่งรูปแล้ว ✓');
+  }catch(e){ showToast('ไม่ได้: '+e.message); }
+  input.value='';
+}
+
+// ===== ALBUM =====
+function loadAlbum(){
+  const area=document.getElementById('albumArea');
+  area.innerHTML='<div class="loading-center"><div class="spinner"></div></div>';
+  db.collection('album').orderBy('createdAt','desc').get().then(snap=>{
+    if(snap.empty){ area.innerHTML='<div style="text-align:center;color:var(--gray);padding:40px">ยังไม่มีรูปในอัลบั้ม</div>'; return; }
+    area.innerHTML='<div class="album-grid" id="albumGrid"></div>';
+    const grid=document.getElementById('albumGrid');
+    snap.forEach(doc=>{
+      const d=doc.data();
+      const div=document.createElement('div');
+      div.className='album-item';
+      div.innerHTML=`<img src="${d.url}" loading="lazy"/>`;
+      div.onclick=()=>openViewer(d.url);
+      grid.appendChild(div);
+    });
+  });
+}
+
+// ===== STATUS =====
+async function setStatus(emoji, text, color){
+  await saveProfile(currentUser.email,{status:{emoji,text,color}});
+  closeModal('statusModal');
+  loadProfile();
+  showToast('ตั้งสถานะแล้ว: '+emoji+' '+text);
+}
+
+// ===== CALENDAR =====
+let currentCalDate = new Date();
+let calEvents = [];
+
+function loadCalendar(){
+  const area=document.getElementById('groupArea');
+  area.innerHTML=`
+    <div style="padding:16px">
+      <div style="background:var(--white);border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.06)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <button onclick="prevMonth()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--black)">‹</button>
+          <div style="font-size:16px;font-weight:700;color:var(--black)" id="calMonthLabel"></div>
+          <button onclick="nextMonth()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--black)">›</button>
+        </div>
+        <div class="cal-header">
+          <span>อา</span><span>จ</span><span>อ</span><span>พ</span><span>พฤ</span><span>ศ</span><span>ส</span>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="font-size:15px;font-weight:700;color:var(--black)">นัดหมาย</div>
+        <button onclick="openAddEvent()" style="background:var(--green);color:#fff;border:none;border-radius:20px;padding:6px 14px;font-size:13px;cursor:pointer">+ เพิ่ม</button>
+      </div>
+      <div id="eventList"></div>
+    </div>`;
+  db.collection('events').orderBy('date','asc').onSnapshot(snap=>{
+    calEvents=[];
+    snap.forEach(doc=>calEvents.push({id:doc.id,...doc.data()}));
+    renderCalendar();
+    renderEvents();
+  });
+}
+
+function renderCalendar(){
+  const label=document.getElementById('calMonthLabel');
+  const grid=document.getElementById('calGrid');
+  if(!label||!grid) return;
+  label.textContent=currentCalDate.toLocaleDateString('th-TH',{month:'long',year:'numeric'});
+  const year=currentCalDate.getFullYear();
+  const month=currentCalDate.getMonth();
+  const first=new Date(year,month,1).getDay();
+  const days=new Date(year,month+1,0).getDate();
+  const today=new Date();
+  grid.innerHTML='';
+  for(let i=0;i<first;i++){
+    const d=document.createElement('div');
+    d.className='cal-day other-month';
+    grid.appendChild(d);
+  }
+  for(let d=1;d<=days;d++){
+    const div=document.createElement('div');
+    div.className='cal-day';
+    const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    if(d===today.getDate()&&month===today.getMonth()&&year===today.getFullYear()) div.classList.add('today');
+    if(calEvents.some(e=>e.date===dateStr)) div.classList.add('has-event');
+    div.textContent=d;
+    div.onclick=()=>scrollToDate(dateStr);
+    grid.appendChild(div);
+  }
+}
+
+function renderEvents(){
+  const list=document.getElementById('eventList');
+  if(!list) return;
+  if(calEvents.length===0){ list.innerHTML='<div style="text-align:center;color:var(--gray);padding:20px">ยังไม่มีนัดหมาย</div>'; return; }
+  list.innerHTML='';
+  calEvents.forEach(ev=>{
+    const div=document.createElement('div');
+    div.className='event-item';
+    div.id='ev_'+ev.date;
+    div.innerHTML=`
+      <div class="event-dot" style="background:var(--green)"></div>
+      <div style="flex:1">
+        <div style="font-size:15px;font-weight:600;color:var(--black)">${ev.title}</div>
+        <div style="font-size:12px;color:var(--gray)">${ev.date}${ev.time?' '+ev.time:''}</div>
+        ${ev.note?`<div style="font-size:13px;color:var(--gray);margin-top:2px">${ev.note}</div>`:''}
+      </div>
+      <button onclick="deleteEvent('${ev.id}')" style="background:none;border:none;color:var(--danger);font-size:18px;cursor:pointer">🗑</button>`;
+    list.appendChild(div);
+  });
+}
+
+function scrollToDate(date){
+  const el=document.getElementById('ev_'+date);
+  if(el) el.scrollIntoView({behavior:'smooth'});
+}
+
+function prevMonth(){ currentCalDate.setMonth(currentCalDate.getMonth()-1); renderCalendar(); }
+function nextMonth(){ currentCalDate.setMonth(currentCalDate.getMonth()+1); renderCalendar(); }
+
+function openAddEvent(){
+  document.getElementById('eventDate').value=new Date().toISOString().split('T')[0];
+  document.getElementById('addEventModal').classList.add('active');
+}
+
+async function saveEvent(){
+  const title=document.getElementById('eventTitle').value.trim();
+  const date=document.getElementById('eventDate').value;
+  const time=document.getElementById('eventTime').value;
+  const note=document.getElementById('eventNote').value.trim();
+  if(!title||!date){ showToast('กรุณากรอกชื่อและวันที่'); return; }
+  await db.collection('events').add({
+    title, date, time, note,
+    createdBy:currentUser.email,
+    createdAt:firebase.firestore.FieldValue.serverTimestamp()
+  });
+  closeModal('addEventModal');
+  showToast('เพิ่มนัดหมายแล้ว ✓');
+  ['eventTitle','eventTime','eventNote'].forEach(id=>document.getElementById(id).value='');
+}
+
+async function deleteEvent(id){
+  if(confirm('ลบนัดหมายนี้?')){
+    await db.collection('events').doc(id).delete();
+    showToast('ลบแล้ว');
+  }
 }
 
 // ===== PWA =====

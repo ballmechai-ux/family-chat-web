@@ -10,118 +10,106 @@
 <meta name="apple-mobile-web-app-title" content="Family Chat"/>
 <title>Family Chat</title>
 <link rel="manifest" href="#" id="manifest-link"/>
-
-<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
-
-<!-- Agora -->
-<script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.20.0.js"></script>
-
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
-  --green:#06C755;--green-dark:#05A847;--green-light:#E8F9EE;
+  --green:#06C755;--green-dark:#05A847;
   --bg:#F0F0F0;--white:#fff;--black:#111;
   --gray:#8A8A8A;--gray-light:#E5E5E5;--gray-mid:#C8C8C8;
   --bubble-me:#C8F7B4;--bubble-them:#fff;
-  --header:#06C755;--header-text:#fff;
-  --danger:#FF3B30;--blue:#007AFF;
-  --radius:18px;--radius-sm:10px;
+  --danger:#FF3B30;--radius:18px;
   --font:'Noto Sans Thai',sans-serif;
 }
 body{font-family:var(--font);background:var(--bg);height:100dvh;overflow:hidden;display:flex;flex-direction:column}
 input,button,textarea{font-family:var(--font)}
-
-/* ===== SCREENS ===== */
 .screen{display:none;flex-direction:column;height:100dvh;position:absolute;inset:0;background:var(--bg)}
 .screen.active{display:flex}
 
-/* ===== LOGIN ===== */
+/* LOGIN */
 #loginScreen{background:var(--green);align-items:center;justify-content:center;gap:24px}
-.login-logo{width:80px;height:80px;background:var(--white);border-radius:22px;display:flex;align-items:center;justify-content:center;font-size:40px;box-shadow:0 4px 20px rgba(0,0,0,.2)}
-.login-title{color:#fff;font-size:28px;font-weight:700;letter-spacing:.5px}
+.login-logo{width:80px;height:80px;background:#fff;border-radius:22px;display:flex;align-items:center;justify-content:center;font-size:40px;box-shadow:0 4px 20px rgba(0,0,0,.2)}
+.login-title{color:#fff;font-size:28px;font-weight:700}
 .login-sub{color:rgba(255,255,255,.8);font-size:14px}
-.login-box{background:var(--white);border-radius:16px;padding:24px;width:calc(100% - 48px);max-width:360px;display:flex;flex-direction:column;gap:12px;box-shadow:0 8px 32px rgba(0,0,0,.15)}
+.login-box{background:#fff;border-radius:16px;padding:24px;width:calc(100% - 48px);max-width:360px;display:flex;flex-direction:column;gap:12px;box-shadow:0 8px 32px rgba(0,0,0,.15)}
 .login-box input{border:1.5px solid var(--gray-mid);border-radius:10px;padding:13px 16px;font-size:15px;outline:none;transition:.2s}
 .login-box input:focus{border-color:var(--green)}
-.btn-login{background:var(--green);color:#fff;border:none;border-radius:10px;padding:14px;font-size:16px;font-weight:700;cursor:pointer;transition:.15s}
+.btn-login{background:var(--green);color:#fff;border:none;border-radius:10px;padding:14px;font-size:16px;font-weight:700;cursor:pointer}
 .btn-login:active{background:var(--green-dark)}
 .login-err{color:var(--danger);font-size:13px;text-align:center;min-height:18px}
 
-/* ===== TABS ===== */
-#mainScreen{background:var(--bg)}
-.tab-bar{display:flex;background:var(--white);border-top:1px solid var(--gray-light);position:absolute;bottom:0;left:0;right:0;z-index:100}
-.tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 0 10px;gap:3px;border:none;background:none;cursor:pointer;color:var(--gray);font-size:10px;transition:.15s}
+/* TABS */
+.tab-bar{display:flex;background:#fff;border-top:1px solid var(--gray-light);position:absolute;bottom:0;left:0;right:0;z-index:100}
+.tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 0 10px;gap:3px;border:none;background:none;cursor:pointer;color:var(--gray);font-size:10px}
 .tab-btn.active{color:var(--green)}
 .tab-btn svg{width:24px;height:24px}
 .tab-content{flex:1;overflow:hidden;position:relative;margin-bottom:56px}
 .tab-pane{display:none;flex-direction:column;height:100%;position:absolute;inset:0}
 .tab-pane.active{display:flex}
 
-/* ===== HEADER ===== */
+/* HEADER */
 .top-bar{background:var(--green);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:12px;min-height:56px;flex-shrink:0}
 .top-bar h2{font-size:18px;font-weight:700;flex:1}
-.top-bar-back{background:none;border:none;color:#fff;font-size:22px;cursor:pointer;padding:4px;line-height:1}
-.top-bar-action{background:none;border:none;color:#fff;cursor:pointer;padding:4px}
 
-/* ===== CHAT LIST ===== */
+/* CHAT LIST */
 .chat-list{overflow-y:auto;flex:1}
-.chat-item{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--white);border-bottom:1px solid var(--gray-light);cursor:pointer;transition:.1s}
+.chat-item{display:flex;align-items:center;gap:12px;padding:12px 16px;background:#fff;border-bottom:1px solid var(--gray-light);cursor:pointer}
 .chat-item:active{background:#f5f5f5}
-.avatar{width:48px;height:48px;border-radius:50%;font-size:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700}
+.avatar{border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;overflow:hidden}
+.avatar img{width:100%;height:100%;object-fit:cover}
 .chat-info{flex:1;min-width:0}
 .chat-name{font-size:15px;font-weight:600;color:var(--black);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .chat-preview{font-size:13px;color:var(--gray);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
 .chat-meta{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
 .chat-time{font-size:11px;color:var(--gray)}
-.badge{background:var(--green);color:#fff;border-radius:10px;font-size:11px;font-weight:700;padding:1px 7px;min-width:20px;text-align:center}
 
-/* ===== CHAT ROOM ===== */
+/* CHAT ROOM */
 #chatRoomScreen{z-index:10}
 .chat-room-bar{background:var(--green);color:#fff;padding:10px 12px;display:flex;align-items:center;gap:10px;flex-shrink:0}
-.chat-room-bar .avatar{width:38px;height:38px;font-size:18px}
-.chat-room-bar .info{flex:1}
-.chat-room-bar .info .name{font-size:15px;font-weight:700}
-.chat-room-bar .info .status{font-size:11px;opacity:.85}
-.room-actions{display:flex;gap:4px}
-.room-act-btn{background:none;border:none;color:#fff;padding:8px;cursor:pointer;border-radius:50%;transition:.15s}
+.room-info{flex:1}
+.room-info .name{font-size:15px;font-weight:700}
+.room-info .status{font-size:11px;opacity:.85}
+.room-actions{display:flex;gap:2px}
+.room-act-btn{background:none;border:none;color:#fff;padding:8px;cursor:pointer;border-radius:50%}
 .room-act-btn:active{background:rgba(255,255,255,.2)}
-.room-act-btn svg{width:22px;height:22px}
+.room-act-btn svg{width:22px;height:22px;display:block}
 
 .messages-area{flex:1;overflow-y:auto;padding:12px 12px 8px;display:flex;flex-direction:column;gap:6px}
-.msg-row{display:flex;align-items:flex-end;gap:8px}
+.msg-row{display:flex;align-items:flex-end;gap:6px}
 .msg-row.me{flex-direction:row-reverse}
-.msg-row .avatar-sm{width:28px;height:28px;border-radius:50%;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.bubble{max-width:70%;padding:9px 13px;border-radius:var(--radius);font-size:14.5px;line-height:1.45;word-break:break-word;position:relative}
+.avatar-sm{width:28px;height:28px;border-radius:50%;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden}
+.avatar-sm img{width:100%;height:100%;object-fit:cover}
+.bubble{max-width:70%;padding:9px 13px;border-radius:var(--radius);font-size:14.5px;line-height:1.5;word-break:break-word;white-space:pre-wrap;position:relative}
 .msg-row.them .bubble{background:var(--bubble-them);border-bottom-left-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,.1)}
 .msg-row.me .bubble{background:var(--bubble-me);border-bottom-right-radius:4px}
-.bubble img{max-width:100%;border-radius:10px;display:block;cursor:pointer}
+.bubble img{max-width:100%;border-radius:10px;display:block;cursor:pointer;white-space:normal}
 .msg-time{font-size:10px;color:var(--gray);flex-shrink:0;margin-bottom:2px}
 .msg-sender{font-size:11px;color:var(--gray);margin-bottom:2px}
 .date-divider{text-align:center;color:var(--gray);font-size:12px;margin:8px 0;position:relative}
 .date-divider span{background:var(--bg);padding:0 10px;position:relative;z-index:1}
 .date-divider::before{content:'';position:absolute;top:50%;left:0;right:0;height:1px;background:var(--gray-mid)}
 
-.input-area{background:var(--white);padding:8px 10px;display:flex;align-items:flex-end;gap:8px;border-top:1px solid var(--gray-light);flex-shrink:0}
+.input-area{background:#fff;padding:8px 10px;display:flex;align-items:flex-end;gap:8px;border-top:1px solid var(--gray-light);flex-shrink:0}
 .input-area textarea{flex:1;border:none;outline:none;font-size:15px;resize:none;max-height:100px;line-height:1.4;padding:6px 2px;background:transparent}
-.inp-btn{background:none;border:none;color:var(--gray);cursor:pointer;padding:6px;border-radius:50%;transition:.15s;display:flex;align-items:center;justify-content:center}
-.inp-btn:active{background:var(--gray-light)}
+.inp-btn{background:none;border:none;color:var(--gray);cursor:pointer;padding:6px;border-radius:50%;display:flex;align-items:center;justify-content:center}
 .inp-btn svg{width:24px;height:24px}
-.send-btn{background:var(--green);border:none;border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:.15s}
+.send-btn{background:var(--green);border:none;border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
 .send-btn:active{background:var(--green-dark)}
 .send-btn svg{width:18px;height:18px;fill:#fff}
 
-/* ===== PROFILE TAB ===== */
+/* PROFILE */
 .profile-area{overflow-y:auto;flex:1;padding:16px}
-.profile-card{background:var(--white);border-radius:16px;padding:24px;display:flex;flex-direction:column;align-items:center;gap:12px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
-.profile-avatar{width:80px;height:80px;border-radius:50%;font-size:36px;display:flex;align-items:center;justify-content:center}
+.profile-card{background:#fff;border-radius:16px;padding:24px;display:flex;flex-direction:column;align-items:center;gap:12px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.profile-avatar-wrap{position:relative;width:90px;height:90px}
+.profile-avatar-wrap .avatar{width:90px;height:90px;font-size:40px}
+.edit-avatar-btn{position:absolute;bottom:0;right:0;background:var(--green);border:none;border-radius:50%;width:28px;height:28px;color:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.2)}
 .profile-name{font-size:20px;font-weight:700}
 .profile-email{font-size:13px;color:var(--gray)}
-.setting-group{background:var(--white);border-radius:16px;overflow:hidden;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
-.setting-item{display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid var(--gray-light);cursor:pointer;transition:.1s}
+.setting-group{background:#fff;border-radius:16px;overflow:hidden;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.setting-item{display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid var(--gray-light);cursor:pointer}
 .setting-item:last-child{border-bottom:none}
 .setting-item:active{background:#f5f5f5}
 .setting-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
@@ -129,42 +117,51 @@ input,button,textarea{font-family:var(--font)}
 .setting-arrow{color:var(--gray-mid);font-size:18px}
 .btn-logout{background:var(--danger);color:#fff;border:none;border-radius:12px;padding:14px;width:100%;font-size:16px;font-weight:700;cursor:pointer;margin-top:8px}
 
-/* ===== CALL OVERLAY ===== */
+/* MEMBERS */
+.member-item{display:flex;align-items:center;gap:14px;padding:14px 16px;background:#fff;border-bottom:1px solid var(--gray-light)}
+.online-dot{width:10px;height:10px;border-radius:50%;background:var(--green);border:2px solid #fff;position:absolute;bottom:0;right:0}
+.avatar-wrap{position:relative;flex-shrink:0}
+
+/* CALL OVERLAY */
 #callOverlay{display:none;position:fixed;inset:0;background:linear-gradient(160deg,#1a1a2e,#16213e,#0f3460);z-index:999;flex-direction:column;align-items:center;justify-content:space-between;padding:60px 20px 50px}
 #callOverlay.active{display:flex}
-.call-avatar{width:100px;height:100px;border-radius:50%;font-size:48px;display:flex;align-items:center;justify-content:center;margin-bottom:8px}
+.call-avatar-big{width:100px;height:100px;border-radius:50%;font-size:48px;display:flex;align-items:center;justify-content:center;overflow:hidden;margin-bottom:8px}
+.call-avatar-big img{width:100%;height:100%;object-fit:cover}
 .call-name{font-size:26px;font-weight:700;color:#fff}
 .call-status{font-size:15px;color:rgba(255,255,255,.7);margin-top:6px}
-.call-actions{display:flex;gap:32px;align-items:center}
+.call-actions{display:flex;gap:28px;align-items:center}
 .call-btn{display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;background:none;border:none;color:#fff;font-size:12px}
-.call-btn .icon{width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px}
+.call-btn .icon{width:58px;height:58px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px}
 .call-btn.end .icon{background:var(--danger)}
-.call-btn.mute .icon{background:rgba(255,255,255,.2)}
-.call-btn.speaker .icon{background:rgba(255,255,255,.2)}
-.call-btn.active-btn .icon{background:rgba(255,255,255,.35)}
-#remoteVideo,#localVideo{display:none}
+.call-btn.mute .icon,.call-btn.speaker .icon,.call-btn.cam .icon{background:rgba(255,255,255,.2)}
+.call-btn.active-state .icon{background:rgba(255,255,255,.4)}
 
-/* ===== IMAGE VIEWER ===== */
-#imgViewer{display:none;position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:998;align-items:center;justify-content:center}
+/* VIDEO */
+#videoContainer{display:none;position:fixed;inset:0;background:#000;z-index:998;flex-direction:column}
+#videoContainer.active{display:flex}
+#remoteVideo{flex:1;width:100%;object-fit:cover;background:#111}
+#localVideo{position:absolute;top:16px;right:16px;width:100px;height:140px;border-radius:12px;object-fit:cover;background:#222;border:2px solid rgba(255,255,255,.3)}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:990;align-items:flex-end;justify-content:center}
+.modal-overlay.active{display:flex}
+.modal-box{background:#fff;border-radius:20px 20px 0 0;padding:24px;width:100%;max-width:480px}
+.modal-title{font-size:17px;font-weight:700;margin-bottom:16px;text-align:center}
+.modal-input{border:1.5px solid var(--gray-mid);border-radius:10px;padding:12px 14px;font-size:15px;width:100%;outline:none;margin-bottom:12px}
+.modal-input:focus{border-color:var(--green)}
+.modal-btn{background:var(--green);color:#fff;border:none;border-radius:10px;padding:13px;width:100%;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:8px}
+.modal-btn-cancel{background:var(--gray-light);color:var(--black);border:none;border-radius:10px;padding:13px;width:100%;font-size:15px;cursor:pointer}
+
+/* MISC */
+#imgViewer{display:none;position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:997;align-items:center;justify-content:center}
 #imgViewer.active{display:flex}
 #imgViewer img{max-width:100%;max-height:100%;object-fit:contain}
-#imgViewer .close-viewer{position:absolute;top:16px;right:16px;color:#fff;font-size:30px;cursor:pointer;background:none;border:none;line-height:1}
-
-/* ===== TOAST ===== */
+.close-viewer{position:absolute;top:16px;right:16px;color:#fff;font-size:30px;cursor:pointer;background:none;border:none}
 .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:rgba(0,0,0,.8);color:#fff;padding:10px 20px;border-radius:20px;font-size:14px;opacity:0;transition:.3s;z-index:9999;white-space:nowrap;pointer-events:none}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-
-/* ===== LOADING ===== */
 .spinner{width:36px;height:36px;border:3px solid var(--gray-light);border-top-color:var(--green);border-radius:50%;animation:spin .7s linear infinite;margin:auto}
 @keyframes spin{to{transform:rotate(360deg)}}
 .loading-center{flex:1;display:flex;align-items:center;justify-content:center}
-
-/* ===== MEMBERS TAB ===== */
-.member-item{display:flex;align-items:center;gap:14px;padding:14px 16px;background:var(--white);border-bottom:1px solid var(--gray-light)}
-.online-dot{width:10px;height:10px;border-radius:50%;background:var(--green);border:2px solid #fff;position:absolute;bottom:0;right:0}
-.avatar-wrap{position:relative}
-
-/* scrollbar */
 ::-webkit-scrollbar{width:0}
 </style>
 </head>
@@ -185,65 +182,56 @@ input,button,textarea{font-family:var(--font)}
 
 <!-- MAIN -->
 <div class="screen" id="mainScreen">
-  <!-- TAB CONTENT -->
   <div class="tab-content">
-
-    <!-- CHATS TAB -->
+    <!-- CHATS -->
     <div class="tab-pane active" id="tabChats">
       <div class="top-bar"><h2>💬 แชท</h2></div>
-      <div class="chat-list" id="chatList">
-        <div class="loading-center"><div class="spinner"></div></div>
-      </div>
+      <div class="chat-list" id="chatList"><div class="loading-center"><div class="spinner"></div></div></div>
     </div>
-
-    <!-- MEMBERS TAB -->
+    <!-- MEMBERS -->
     <div class="tab-pane" id="tabMembers">
       <div class="top-bar"><h2>👨‍👩‍👧‍👦 สมาชิก</h2></div>
-      <div style="overflow-y:auto;flex:1" id="memberList">
-        <div class="loading-center"><div class="spinner"></div></div>
-      </div>
+      <div style="overflow-y:auto;flex:1" id="memberList"><div class="loading-center"><div class="spinner"></div></div></div>
     </div>
-
-    <!-- PROFILE TAB -->
+    <!-- PROFILE -->
     <div class="tab-pane" id="tabProfile">
       <div class="top-bar"><h2>⚙️ โปรไฟล์</h2></div>
       <div class="profile-area" id="profileArea"></div>
     </div>
-
   </div>
-
-  <!-- BOTTOM TAB BAR -->
   <div class="tab-bar">
-    <button class="tab-btn active" data-tab="tabChats" onclick="switchTab('tabChats',this)">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
-      แชท
+    <button class="tab-btn active" onclick="switchTab('tabChats',this)">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>แชท
     </button>
-    <button class="tab-btn" data-tab="tabMembers" onclick="switchTab('tabMembers',this)">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
-      สมาชิก
+    <button class="tab-btn" onclick="switchTab('tabMembers',this)">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>สมาชิก
     </button>
-    <button class="tab-btn" data-tab="tabProfile" onclick="switchTab('tabProfile',this)">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-      โปรไฟล์
+    <button class="tab-btn" onclick="switchTab('tabProfile',this)">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>โปรไฟล์
     </button>
   </div>
 </div>
 
 <!-- CHAT ROOM -->
-<div class="screen" id="chatRoomScreen">
-  <div class="chat-room-bar" id="roomBar">
-    <button class="top-bar-back" onclick="closeRoom()">‹</button>
-    <div class="avatar-wrap"><div class="avatar" id="roomAvatar" style="width:38px;height:38px;font-size:18px"></div></div>
-    <div class="info"><div class="name" id="roomName"></div><div class="status" id="roomStatus"></div></div>
+<div class="screen" id="chatRoomScreen" style="z-index:10">
+  <div class="chat-room-bar">
+    <button style="background:none;border:none;color:#fff;font-size:22px;cursor:pointer;padding:4px" onclick="closeRoom()">‹</button>
+    <div class="avatar-wrap">
+      <div class="avatar" id="roomAvatar" style="width:38px;height:38px;font-size:18px"></div>
+    </div>
+    <div class="room-info"><div class="name" id="roomName"></div><div class="status" id="roomStatus"></div></div>
     <div class="room-actions">
-      <button class="room-act-btn" onclick="startCall()" title="โทร">
+      <button class="room-act-btn" onclick="startCall(false)" title="โทรเสียง">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg>
+      </button>
+      <button class="room-act-btn" onclick="startCall(true)" title="วีดีโอคอล">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
       </button>
     </div>
   </div>
   <div class="messages-area" id="messagesArea"></div>
   <div class="input-area">
-    <button class="inp-btn" onclick="pickImage()" title="รูปภาพ">
+    <button class="inp-btn" onclick="pickImage()">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
     </button>
     <textarea id="msgInput" placeholder="พิมพ์ข้อความ..." rows="1" oninput="autoResize(this)" onkeydown="handleKey(event)"></textarea>
@@ -254,10 +242,10 @@ input,button,textarea{font-family:var(--font)}
   <input type="file" id="imgPicker" accept="image/*" style="display:none" onchange="sendImage(this)"/>
 </div>
 
-<!-- CALL OVERLAY -->
+<!-- CALL OVERLAY (audio) -->
 <div id="callOverlay">
   <div style="display:flex;flex-direction:column;align-items:center">
-    <div class="call-avatar" id="callAvatar"></div>
+    <div class="call-avatar-big" id="callAvatarEl"></div>
     <div class="call-name" id="callName"></div>
     <div class="call-status" id="callStatus">กำลังโทร...</div>
   </div>
@@ -268,9 +256,38 @@ input,button,textarea{font-family:var(--font)}
     <button class="call-btn end" onclick="endCall()">
       <div class="icon">📵</div><span>วางสาย</span>
     </button>
-    <button class="call-btn speaker" id="speakerBtn" onclick="toggleSpeaker()">
+    <button class="call-btn speaker" onclick="toggleSpeaker()">
       <div class="icon">🔊</div><span>ลำโพง</span>
     </button>
+  </div>
+</div>
+
+<!-- VIDEO CALL -->
+<div id="videoContainer">
+  <video id="remoteVideo" autoplay playsinline></video>
+  <video id="localVideo" autoplay playsinline muted></video>
+  <div style="position:absolute;bottom:40px;left:0;right:0;display:flex;justify-content:center;gap:24px">
+    <button class="call-btn cam" id="camBtn" onclick="toggleCam()">
+      <div class="icon">📷</div><span style="color:#fff;font-size:11px">กล้อง</span>
+    </button>
+    <button class="call-btn end" onclick="endCall()">
+      <div class="icon">📵</div><span style="color:#fff;font-size:11px">วางสาย</span>
+    </button>
+    <button class="call-btn mute" id="muteBtnV" onclick="toggleMute()">
+      <div class="icon">🎙️</div><span style="color:#fff;font-size:11px">ปิดไมค์</span>
+    </button>
+  </div>
+  <div style="position:absolute;top:16px;left:16px;color:#fff;font-size:14px;font-weight:700;text-shadow:0 1px 4px rgba(0,0,0,.5)" id="videoCallName"></div>
+  <div style="position:absolute;top:38px;left:16px;color:rgba(255,255,255,.8);font-size:12px" id="videoCallStatus"></div>
+</div>
+
+<!-- EDIT NAME MODAL -->
+<div class="modal-overlay" id="editNameModal">
+  <div class="modal-box">
+    <div class="modal-title">เปลี่ยนชื่อ</div>
+    <input class="modal-input" id="newNameInput" placeholder="ชื่อใหม่" maxlength="20"/>
+    <button class="modal-btn" onclick="saveNewName()">บันทึก</button>
+    <button class="modal-btn-cancel" onclick="closeModal('editNameModal')">ยกเลิก</button>
   </div>
 </div>
 
@@ -282,9 +299,10 @@ input,button,textarea{font-family:var(--font)}
 
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
+<input type="file" id="avatarPicker" accept="image/*" style="display:none" onchange="uploadAvatar(this)"/>
 
 <script>
-// ===== FIREBASE CONFIG =====
+// ===== FIREBASE =====
 const firebaseConfig = {
   apiKey: "AIzaSyBAAuY8sHd9tjM1wZ-VUvHy_NnfnCJF_Vo",
   authDomain: "family-chat-5a23b.firebaseapp.com",
@@ -299,40 +317,54 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 const storage = firebase.storage();
 
-// ===== AGORA CONFIG =====
-const AGORA_APP_ID = "c7a780270bf745ff88ba20abd4d36bcb";
-let agoraClient = null;
-let localAudioTrack = null;
-let isMuted = false;
-let callTimer = null;
-let callSeconds = 0;
-
-// ===== MEMBERS DATA =====
-const MEMBERS = {
-  "ball@family.com":  { name:"บอล",  emoji:"👨", color:"#4A90D9" },
-  "nok@family.com":   { name:"น้อก", emoji:"👩", color:"#E91E8C" },
-  "yai@family.com":   { name:"ยาย",  emoji:"👵", color:"#9B59B6" },
+// ===== MEMBERS BASE DATA =====
+const MEMBERS_BASE = {
+  "ball@family.com":  { name:"บอล",   emoji:"👨", color:"#4A90D9" },
+  "nok@family.com":   { name:"น้อก",  emoji:"👩", color:"#E91E8C" },
+  "yai@family.com":   { name:"ยาย",   emoji:"👵", color:"#9B59B6" },
   "max@family.com":   { name:"แม็กซ์",emoji:"👦", color:"#27AE60" },
-  "ploy@family.com":  { name:"พลอย", emoji:"👧", color:"#E67E22" },
+  "ploy@family.com":  { name:"พลอย",  emoji:"👧", color:"#E67E22" },
 };
-function getMember(email){ return MEMBERS[email] || {name:email,emoji:"👤",color:"#888"} }
+let userProfiles = {}; // email -> {name, photoURL}
+
+function getMember(email){
+  const base = MEMBERS_BASE[email] || {name:email,emoji:"👤",color:"#888"};
+  const prof = userProfiles[email] || {};
+  return {...base, name: prof.name||base.name, photoURL: prof.photoURL||null};
+}
+
+function avatarHtml(email, size=48, fontSize=22){
+  const m = getMember(email);
+  if(m.photoURL){
+    return `<div class="avatar" style="width:${size}px;height:${size}px;background:${m.color}20"><img src="${m.photoURL}" alt="${m.name}"/></div>`;
+  }
+  return `<div class="avatar" style="width:${size}px;height:${size}px;font-size:${fontSize}px;background:${m.color}20">${m.emoji}</div>`;
+}
 
 // ===== STATE =====
 let currentUser = null;
 let currentRoomId = null;
-let unsubMessages = null;
-let unsubChatList = null;
 let chatPartner = null;
-let onlineUsers = {};
+let unsubMessages = null;
+let peerConn = null;
+let localStream = null;
+let isMuted = false;
+let isCamOff = false;
+let isVideoCall = false;
+let callTimer = null;
+let callSeconds = 0;
+let remoteAudio = new Audio();
 
 // ===== AUTH =====
-auth.onAuthStateChanged(user => {
+auth.onAuthStateChanged(async user => {
   if(user){
     currentUser = user;
+    await loadAllProfiles();
     showMain();
     loadChatList();
     loadProfile();
     updatePresence(true);
+    listenIncomingCalls();
   } else {
     showScreen('loginScreen');
   }
@@ -343,19 +375,29 @@ document.getElementById('loginBtn').onclick = async () => {
   const pass  = document.getElementById('loginPass').value;
   const err   = document.getElementById('loginErr');
   err.textContent = '';
-  try {
-    await auth.signInWithEmailAndPassword(email, pass);
-  } catch(e) {
-    err.textContent = 'อีเมลหรือรหัสผ่านไม่ถูกต้อง';
-  }
+  try { await auth.signInWithEmailAndPassword(email, pass); }
+  catch(e){ err.textContent = 'อีเมลหรือรหัสผ่านไม่ถูกต้อง'; }
 };
+
+// ===== PROFILES =====
+async function loadAllProfiles(){
+  try {
+    const snap = await db.collection('profiles').get();
+    snap.forEach(doc => { userProfiles[doc.id] = doc.data(); });
+  } catch(e){}
+}
+
+async function saveProfile(email, data){
+  await db.collection('profiles').doc(email).set(data, {merge:true});
+  userProfiles[email] = {...(userProfiles[email]||{}), ...data};
+}
 
 // ===== PRESENCE =====
 function updatePresence(online){
   if(!currentUser) return;
   db.collection('presence').doc(currentUser.uid).set({
-    email: currentUser.email,
-    online, updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    email: currentUser.email, online,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
   });
 }
 window.addEventListener('beforeunload', () => updatePresence(false));
@@ -367,45 +409,40 @@ function showScreen(id){
 }
 function showMain(){ showScreen('mainScreen'); loadMembers(); }
 
-// ===== TABS =====
 function switchTab(tabId, btn){
   document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById(tabId).classList.add('active');
   btn.classList.add('active');
-  if(tabId === 'tabMembers') loadMembers();
+  if(tabId==='tabMembers') loadMembers();
+  if(tabId==='tabProfile') loadProfile();
 }
 
 // ===== CHAT LIST =====
-function getRoomId(a, b){
-  return [a,b].sort().join('__').replace(/@/g,'_at_').replace(/\./g,'_dot_');
-}
+function getRoomId(a,b){ return [a,b].sort().join('__').replace(/@/g,'_at_').replace(/\./g,'_dot_'); }
 
 function loadChatList(){
   const list = document.getElementById('chatList');
-  const others = Object.entries(MEMBERS).filter(([e]) => e !== currentUser.email);
   list.innerHTML = '';
-  others.forEach(([email, m]) => {
+  Object.entries(MEMBERS_BASE).filter(([e])=>e!==currentUser.email).forEach(([email])=>{
     const roomId = getRoomId(currentUser.email, email);
+    const m = getMember(email);
     const div = document.createElement('div');
     div.className = 'chat-item';
     div.innerHTML = `
-      <div class="avatar" style="background:${m.color}20;font-size:22px">${m.emoji}</div>
+      ${avatarHtml(email)}
       <div class="chat-info">
-        <div class="chat-name">${m.name}</div>
+        <div class="chat-name" id="cname_${roomId}">${m.name}</div>
         <div class="chat-preview" id="preview_${roomId}">แตะเพื่อแชท</div>
       </div>
-      <div class="chat-meta">
-        <div class="chat-time" id="time_${roomId}"></div>
-        <div id="badge_${roomId}"></div>
-      </div>`;
+      <div class="chat-meta"><div class="chat-time" id="time_${roomId}"></div></div>`;
     div.onclick = () => openRoom(email);
     list.appendChild(div);
-    listenLastMsg(roomId, email);
+    listenLastMsg(roomId);
   });
 }
 
-function listenLastMsg(roomId, partnerEmail){
+function listenLastMsg(roomId){
   db.collection('rooms').doc(roomId).collection('messages')
     .orderBy('createdAt','desc').limit(1)
     .onSnapshot(snap => {
@@ -413,22 +450,21 @@ function listenLastMsg(roomId, partnerEmail){
       const d = snap.docs[0].data();
       const el = document.getElementById('preview_'+roomId);
       const te = document.getElementById('time_'+roomId);
-      if(el) el.textContent = d.type==='image' ? '📷 รูปภาพ' : (d.text||'');
+      if(el) el.textContent = d.type==='image'?'📷 รูปภาพ':(d.text||'').replace(/\n/g,' ');
       if(te && d.createdAt) te.textContent = fmtTime(d.createdAt.toDate());
     });
 }
 
-// ===== OPEN ROOM =====
+// ===== ROOM =====
 function openRoom(partnerEmail){
   chatPartner = partnerEmail;
-  const m = getMember(partnerEmail);
   currentRoomId = getRoomId(currentUser.email, partnerEmail);
-
-  document.getElementById('roomAvatar').textContent = m.emoji;
-  document.getElementById('roomAvatar').style.background = m.color+'20';
+  const m = getMember(partnerEmail);
+  const rav = document.getElementById('roomAvatar');
+  if(m.photoURL){ rav.innerHTML=`<img src="${m.photoURL}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`; }
+  else { rav.textContent=m.emoji; rav.style.background=m.color+'20'; }
   document.getElementById('roomName').textContent = m.name;
   document.getElementById('roomStatus').textContent = '';
-
   showScreen('chatRoomScreen');
   listenMessages();
   listenOnline(partnerEmail);
@@ -437,7 +473,7 @@ function openRoom(partnerEmail){
 function closeRoom(){
   if(unsubMessages){ unsubMessages(); unsubMessages=null; }
   showScreen('mainScreen');
-  chatPartner = null; currentRoomId = null;
+  chatPartner=null; currentRoomId=null;
 }
 
 function listenOnline(email){
@@ -445,157 +481,140 @@ function listenOnline(email){
     .onSnapshot(snap => {
       if(snap.empty) return;
       const d = snap.docs[0].data();
-      document.getElementById('roomStatus').textContent = d.online ? 'ออนไลน์' : 'ออฟไลน์';
+      document.getElementById('roomStatus').textContent = d.online?'ออนไลน์':'ออฟไลน์';
     });
 }
 
 // ===== MESSAGES =====
 function listenMessages(){
   const area = document.getElementById('messagesArea');
-  area.innerHTML = '<div class="loading-center"><div class="spinner"></div></div>';
+  area.innerHTML='<div class="loading-center"><div class="spinner"></div></div>';
   if(unsubMessages) unsubMessages();
   unsubMessages = db.collection('rooms').doc(currentRoomId)
     .collection('messages').orderBy('createdAt','asc')
     .onSnapshot(snap => {
-      area.innerHTML = '';
-      let lastDate = '';
+      area.innerHTML='';
+      let lastDate='';
       snap.forEach(doc => {
         const d = doc.data();
         if(!d.createdAt) return;
         const date = d.createdAt.toDate().toLocaleDateString('th-TH',{day:'numeric',month:'long',year:'numeric'});
-        if(date !== lastDate){
-          lastDate = date;
-          area.insertAdjacentHTML('beforeend',`<div class="date-divider"><span>${date}</span></div>`);
-        }
-        renderMsg(area, d);
+        if(date!==lastDate){ lastDate=date; area.insertAdjacentHTML('beforeend',`<div class="date-divider"><span>${date}</span></div>`); }
+        renderMsg(area,d);
       });
-      area.scrollTop = area.scrollHeight;
+      area.scrollTop=area.scrollHeight;
     });
 }
 
-function renderMsg(area, d){
-  const me = d.senderEmail === currentUser.email;
+function renderMsg(area,d){
+  const me = d.senderEmail===currentUser.email;
   const m = getMember(d.senderEmail);
   const row = document.createElement('div');
-  row.className = 'msg-row ' + (me ? 'me' : 'them');
-
-  let bubbleContent = '';
-  if(d.type === 'image'){
-    bubbleContent = `<img src="${d.imageUrl}" onclick="openViewer('${d.imageUrl}')" loading="lazy"/>`;
-  } else {
-    bubbleContent = escapeHtml(d.text||'');
-  }
-
-  const time = d.createdAt ? fmtTime(d.createdAt.toDate()) : '';
-  row.innerHTML = `
-    ${!me ? `<div class="avatar-sm" style="background:${m.color}20">${m.emoji}</div>` : ''}
+  row.className='msg-row '+(me?'me':'them');
+  let bubble='';
+  if(d.type==='image') bubble=`<img src="${d.imageUrl}" onclick="openViewer('${d.imageUrl}')" loading="lazy"/>`;
+  else bubble=escHtml(d.text||'');
+  const time = d.createdAt?fmtTime(d.createdAt.toDate()):'';
+  row.innerHTML=`
+    ${!me?`<div class="avatar-sm" style="background:${m.color}20">${m.photoURL?`<img src="${m.photoURL}"/>`:(m.emoji)}</div>`:''}
     <div style="display:flex;flex-direction:column;align-items:${me?'flex-end':'flex-start'};gap:2px;max-width:75%">
-      ${!me ? `<div class="msg-sender">${m.name}</div>` : ''}
-      <div class="bubble">${bubbleContent}</div>
+      ${!me?`<div class="msg-sender">${m.name}</div>`:''}
+      <div class="bubble">${bubble}</div>
     </div>
-    <div class="msg-time">${time}</div>
-    ${me ? '' : ''}`;
+    <div class="msg-time">${time}</div>`;
   area.appendChild(row);
 }
 
 async function sendMsg(){
-  const inp = document.getElementById('msgInput');
-  const text = inp.value.trim();
-  if(!text || !currentRoomId) return;
-  inp.value = ''; inp.style.height='auto';
-  try {
+  const inp=document.getElementById('msgInput');
+  const text=inp.value.trim();
+  if(!text||!currentRoomId) return;
+  inp.value=''; inp.style.height='auto';
+  try{
     await db.collection('rooms').doc(currentRoomId).collection('messages').add({
-      text, senderEmail: currentUser.email,
-      type:'text', createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      text, senderEmail:currentUser.email, type:'text',
+      createdAt:firebase.firestore.FieldValue.serverTimestamp()
     });
-  } catch(e){ showToast('ส่งไม่ได้: '+e.message); }
+  }catch(e){ showToast('ส่งไม่ได้'); }
 }
-
-function handleKey(e){
-  if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendMsg(); }
-}
-function autoResize(el){
-  el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,100)+'px';
-}
+function handleKey(e){ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();} }
+function autoResize(el){ el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,100)+'px'; }
 
 // ===== IMAGE =====
 function pickImage(){ document.getElementById('imgPicker').click(); }
-
 async function sendImage(input){
-  const file = input.files[0]; if(!file) return;
+  const file=input.files[0]; if(!file) return;
   showToast('กำลังอัพโหลด...');
-  try {
-    const ref = storage.ref(`chat/${currentRoomId}/${Date.now()}_${file.name}`);
+  try{
+    const ref=storage.ref(`chat/${currentRoomId}/${Date.now()}_${file.name}`);
     await ref.put(file);
-    const url = await ref.getDownloadURL();
+    const url=await ref.getDownloadURL();
     await db.collection('rooms').doc(currentRoomId).collection('messages').add({
-      imageUrl: url, senderEmail: currentUser.email,
-      type:'image', createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      imageUrl:url, senderEmail:currentUser.email, type:'image',
+      createdAt:firebase.firestore.FieldValue.serverTimestamp()
     });
     showToast('ส่งรูปแล้ว ✓');
-  } catch(e){ showToast('อัพโหลดไม่ได้: '+e.message); }
+  }catch(e){ showToast('อัพโหลดไม่ได้'); }
   input.value='';
 }
-
 function openViewer(src){ document.getElementById('viewerImg').src=src; document.getElementById('imgViewer').classList.add('active'); }
 function closeViewer(){ document.getElementById('imgViewer').classList.remove('active'); }
 
-// ===== MEMBERS TAB =====
+// ===== MEMBERS =====
 function loadMembers(){
-  const list = document.getElementById('memberList');
-  list.innerHTML = '';
-  Object.entries(MEMBERS).forEach(([email, m]) => {
-    const isMe = email === currentUser?.email;
-    const div = document.createElement('div');
-    div.className = 'member-item';
-    div.innerHTML = `
+  const list=document.getElementById('memberList');
+  list.innerHTML='';
+  Object.entries(MEMBERS_BASE).forEach(([email])=>{
+    const isMe=email===currentUser?.email;
+    const m=getMember(email);
+    const div=document.createElement('div');
+    div.className='member-item';
+    div.innerHTML=`
       <div class="avatar-wrap">
-        <div class="avatar" style="background:${m.color}20;width:48px;height:48px;font-size:22px">${m.emoji}</div>
+        ${avatarHtml(email,48,22)}
         <div class="online-dot" id="dot_${email.replace(/[@.]/g,'_')}" style="display:none"></div>
       </div>
       <div style="flex:1">
-        <div style="font-size:15px;font-weight:600">${m.name} ${isMe?'<span style="font-size:12px;color:var(--gray)">(คุณ)</span>':''}</div>
+        <div style="font-size:15px;font-weight:600">${m.name}${isMe?' <span style="font-size:12px;color:var(--gray)">(คุณ)</span>':''}</div>
         <div style="font-size:12px;color:var(--gray)" id="status_${email.replace(/[@.]/g,'_')}">ออฟไลน์</div>
       </div>
-      ${!isMe ? `<button onclick="openRoom('${email}')" style="background:var(--green);color:#fff;border:none;border-radius:20px;padding:7px 16px;font-size:13px;cursor:pointer">แชท</button>` : ''}`;
+      ${!isMe?`<button onclick="openRoom('${email}')" style="background:var(--green);color:#fff;border:none;border-radius:20px;padding:7px 14px;font-size:13px;cursor:pointer">แชท</button>`:''}`;
     list.appendChild(div);
     listenMemberPresence(email);
   });
 }
 
 function listenMemberPresence(email){
-  const key = email.replace(/[@.]/g,'_');
+  const key=email.replace(/[@.]/g,'_');
   db.collection('presence').where('email','==',email).limit(1)
-    .onSnapshot(snap => {
-      const dot = document.getElementById('dot_'+key);
-      const st  = document.getElementById('status_'+key);
-      if(snap.empty){ return; }
-      const d = snap.docs[0].data();
-      if(dot) dot.style.display = d.online ? 'block' : 'none';
-      if(st)  st.textContent = d.online ? 'ออนไลน์' : 'ออฟไลน์';
+    .onSnapshot(snap=>{
+      const dot=document.getElementById('dot_'+key);
+      const st=document.getElementById('status_'+key);
+      if(snap.empty) return;
+      const d=snap.docs[0].data();
+      if(dot) dot.style.display=d.online?'block':'none';
+      if(st) st.textContent=d.online?'ออนไลน์':'ออฟไลน์';
     });
 }
 
 // ===== PROFILE =====
 function loadProfile(){
-  const area = document.getElementById('profileArea');
+  const area=document.getElementById('profileArea');
   if(!currentUser) return;
-  const m = getMember(currentUser.email);
-  area.innerHTML = `
+  const m=getMember(currentUser.email);
+  area.innerHTML=`
     <div class="profile-card">
-      <div class="profile-avatar" style="background:${m.color}20;font-size:40px">${m.emoji}</div>
-      <div class="profile-name">${m.name}</div>
+      <div class="profile-avatar-wrap">
+        ${avatarHtml(currentUser.email,90,40)}
+        <button class="edit-avatar-btn" onclick="document.getElementById('avatarPicker').click()">📷</button>
+      </div>
+      <div class="profile-name" id="profileNameDisplay">${m.name}</div>
       <div class="profile-email">${currentUser.email}</div>
     </div>
     <div class="setting-group">
-      <div class="setting-item">
-        <div class="setting-icon" style="background:#E3F2FD">🔔</div>
-        <div class="setting-label">การแจ้งเตือน</div>
-        <div class="setting-arrow">›</div>
-      </div>
-      <div class="setting-item">
-        <div class="setting-icon" style="background:#F3E5F5">🔒</div>
-        <div class="setting-label">ความเป็นส่วนตัว</div>
+      <div class="setting-item" onclick="openEditName()">
+        <div class="setting-icon" style="background:#E8F5E9">✏️</div>
+        <div class="setting-label">เปลี่ยนชื่อ</div>
         <div class="setting-arrow">›</div>
       </div>
       <div class="setting-item" onclick="shareApp()">
@@ -607,101 +626,188 @@ function loadProfile(){
     <button class="btn-logout" onclick="logout()">ออกจากระบบ</button>`;
 }
 
+function openEditName(){
+  const m=getMember(currentUser.email);
+  document.getElementById('newNameInput').value=m.name;
+  document.getElementById('editNameModal').classList.add('active');
+}
+
+async function saveNewName(){
+  const name=document.getElementById('newNameInput').value.trim();
+  if(!name){ showToast('กรุณากรอกชื่อ'); return; }
+  try{
+    await saveProfile(currentUser.email,{name});
+    closeModal('editNameModal');
+    loadProfile();
+    loadChatList();
+    showToast('เปลี่ยนชื่อแล้ว ✓');
+  }catch(e){ showToast('บันทึกไม่ได้'); }
+}
+
+async function uploadAvatar(input){
+  const file=input.files[0]; if(!file) return;
+  showToast('กำลังอัพโหลดรูป...');
+  try{
+    const ref=storage.ref(`avatars/${currentUser.email}`);
+    await ref.put(file);
+    const url=await ref.getDownloadURL();
+    await saveProfile(currentUser.email,{photoURL:url});
+    loadProfile();
+    loadChatList();
+    showToast('เปลี่ยนรูปโปรไฟล์แล้ว ✓');
+  }catch(e){ showToast('อัพโหลดไม่ได้'); }
+  input.value='';
+}
+
+function closeModal(id){ document.getElementById(id).classList.remove('active'); }
 function shareApp(){
-  const url = window.location.href;
-  if(navigator.share){ navigator.share({title:'Family Chat',url}); }
+  const url=window.location.href;
+  if(navigator.share) navigator.share({title:'Family Chat',url});
   else { navigator.clipboard.writeText(url); showToast('คัดลอก URL แล้ว'); }
 }
+async function logout(){ updatePresence(false); await auth.signOut(); showScreen('loginScreen'); }
 
-async function logout(){
-  updatePresence(false);
-  await auth.signOut();
-  showScreen('loginScreen');
+// ===== WebRTC CALL =====
+function createPeer(){
+  const pc=new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'}]});
+  pc.ontrack=e=>{
+    if(isVideoCall){
+      document.getElementById('remoteVideo').srcObject=e.streams[0];
+    } else {
+      remoteAudio.srcObject=e.streams[0]; remoteAudio.play();
+    }
+  };
+  pc.onicecandidate=async e=>{
+    if(!e.candidate) return;
+    const ref=db.collection('calls').doc(currentRoomId);
+    const snap=await ref.get();
+    const d=snap.data()||{};
+    const isCaller=d.caller===currentUser.email;
+    const field=isCaller?'callerCandidates':'calleeCandidates';
+    const arr=d[field]||[];
+    arr.push(e.candidate.toJSON());
+    await ref.update({[field]:arr});
+  };
+  return pc;
 }
 
-// ===== AGORA CALL =====
-async function startCall(){
+async function startCall(video=false){
   if(!chatPartner) return;
-  const m = getMember(chatPartner);
-  document.getElementById('callAvatar').textContent = m.emoji;
-  document.getElementById('callName').textContent = m.name;
-  document.getElementById('callStatus').textContent = 'กำลังโทร...';
-  document.getElementById('callOverlay').classList.add('active');
+  isVideoCall=video;
+  const m=getMember(chatPartner);
+  showCallUI(m,video,'กำลังโทร...');
 
-  const channel = currentRoomId;
-  try {
-    agoraClient = AgoraRTC.createClient({mode:'rtc',codec:'vp8'});
-    await agoraClient.join(AGORA_APP_ID, channel, null, null);
-    localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack();
-    await agoraClient.publish([localAudioTrack]);
-
-    agoraClient.on('user-published', async (user, mediaType) => {
-      await agoraClient.subscribe(user, mediaType);
-      if(mediaType === 'audio'){ user.audioTrack.play(); }
+  try{
+    localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:video});
+    if(video) document.getElementById('localVideo').srcObject=localStream;
+    peerConn=createPeer();
+    localStream.getTracks().forEach(t=>peerConn.addTrack(t,localStream));
+    const offer=await peerConn.createOffer();
+    await peerConn.setLocalDescription(offer);
+    await db.collection('calls').doc(currentRoomId).set({
+      caller:currentUser.email, callee:chatPartner,
+      offer:{type:offer.type,sdp:offer.sdp},
+      status:'calling', isVideo:video,
+      channel:currentRoomId,
+      createdAt:firebase.firestore.FieldValue.serverTimestamp()
     });
-
-    // notify via Firestore
-    await db.collection('calls').doc(channel).set({
-      caller: currentUser.email,
-      callee: chatPartner,
-      channel, status:'calling',
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    db.collection('calls').doc(currentRoomId).onSnapshot(async snap=>{
+      const d=snap.data();
+      if(!d) return;
+      if(d.answer&&peerConn&&!peerConn.currentRemoteDescription){
+        await peerConn.setRemoteDescription(new RTCSessionDescription(d.answer));
+        updateCallStatus('เชื่อมต่อแล้ว'); startCallTimer();
+      }
+      if(d.calleeCandidates){
+        for(const c of d.calleeCandidates){ try{await peerConn.addIceCandidate(new RTCIceCandidate(c));}catch(e){} }
+      }
+      if(d.status==='ended'||d.status==='declined') endCall();
     });
+  }catch(e){ showToast('โทรไม่ได้: '+e.message); hideCallUI(); }
+}
 
-    document.getElementById('callStatus').textContent = 'รอสาย...';
-    startCallTimer();
-  } catch(e){
-    showToast('โทรไม่ได้: '+e.message);
-    document.getElementById('callOverlay').classList.remove('active');
-    if(agoraClient) agoraClient.leave();
+function showCallUI(m,video,status){
+  if(video){
+    document.getElementById('videoContainer').classList.add('active');
+    document.getElementById('videoCallName').textContent=m.name;
+    document.getElementById('videoCallStatus').textContent=status;
+  } else {
+    document.getElementById('callOverlay').classList.add('active');
+    const av=document.getElementById('callAvatarEl');
+    if(m.photoURL) av.innerHTML=`<img src="${m.photoURL}" style="width:100%;height:100%;object-fit:cover"/>`;
+    else av.textContent=m.emoji;
+    document.getElementById('callName').textContent=m.name;
+    document.getElementById('callStatus').textContent=status;
   }
 }
 
-function startCallTimer(){
-  callSeconds = 0;
-  callTimer = setInterval(() => {
-    callSeconds++;
-    const m = String(Math.floor(callSeconds/60)).padStart(2,'0');
-    const s = String(callSeconds%60).padStart(2,'0');
-    document.getElementById('callStatus').textContent = `${m}:${s}`;
-  }, 1000);
+function updateCallStatus(s){
+  if(isVideoCall) document.getElementById('videoCallStatus').textContent=s;
+  else document.getElementById('callStatus').textContent=s;
+}
+
+function hideCallUI(){
+  document.getElementById('callOverlay').classList.remove('active');
+  document.getElementById('videoContainer').classList.remove('active');
 }
 
 async function endCall(){
-  clearInterval(callTimer);
-  if(localAudioTrack){ localAudioTrack.stop(); localAudioTrack.close(); localAudioTrack=null; }
-  if(agoraClient){ await agoraClient.leave(); agoraClient=null; }
-  document.getElementById('callOverlay').classList.remove('active');
-  if(currentRoomId){
-    db.collection('calls').doc(currentRoomId).update({status:'ended'}).catch(()=>{});
-  }
+  clearInterval(callTimer); callSeconds=0;
+  if(localStream){ localStream.getTracks().forEach(t=>t.stop()); localStream=null; }
+  if(peerConn){ peerConn.close(); peerConn=null; }
+  remoteAudio.srcObject=null;
+  const rv=document.getElementById('remoteVideo');
+  const lv=document.getElementById('localVideo');
+  if(rv) rv.srcObject=null;
+  if(lv) lv.srcObject=null;
+  hideCallUI();
+  if(currentRoomId) db.collection('calls').doc(currentRoomId).update({status:'ended'}).catch(()=>{});
 }
 
 function toggleMute(){
-  if(!localAudioTrack) return;
-  isMuted = !isMuted;
-  localAudioTrack.setEnabled(!isMuted);
-  const btn = document.getElementById('muteBtn');
-  btn.querySelector('.icon').textContent = isMuted ? '🔇' : '🎙️';
-  btn.querySelector('span').textContent = isMuted ? 'เปิดไมค์' : 'ปิดไมค์';
-  if(isMuted) btn.querySelector('.icon').style.background='rgba(255,59,48,.7)';
-  else btn.querySelector('.icon').style.background='rgba(255,255,255,.2)';
+  if(!localStream) return;
+  isMuted=!isMuted;
+  localStream.getAudioTracks().forEach(t=>t.enabled=!isMuted);
+  const icon=isMuted?'🔇':'🎙️';
+  const label=isMuted?'เปิดไมค์':'ปิดไมค์';
+  ['muteBtn','muteBtnV'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){ el.querySelector('.icon').textContent=icon; el.querySelector('span').textContent=label; }
+  });
 }
 
-function toggleSpeaker(){
-  showToast('ลำโพง: ฟีเจอร์นี้ขึ้นกับอุปกรณ์');
+function toggleCam(){
+  if(!localStream) return;
+  isCamOff=!isCamOff;
+  localStream.getVideoTracks().forEach(t=>t.enabled=!isCamOff);
+  const btn=document.getElementById('camBtn');
+  if(btn){ btn.querySelector('.icon').textContent=isCamOff?'📵':'📷'; }
 }
 
-// incoming call listener
+function toggleSpeaker(){ showToast('ลำโพง: ขึ้นกับอุปกรณ์'); }
+
+function startCallTimer(){
+  callSeconds=0;
+  callTimer=setInterval(()=>{
+    callSeconds++;
+    const m=String(Math.floor(callSeconds/60)).padStart(2,'0');
+    const s=String(callSeconds%60).padStart(2,'0');
+    updateCallStatus(`${m}:${s}`);
+  },1000);
+}
+
+// ===== INCOMING CALLS =====
 function listenIncomingCalls(){
   if(!currentUser) return;
   db.collection('calls').where('callee','==',currentUser.email).where('status','==','calling')
-    .onSnapshot(snap => {
-      snap.docChanges().forEach(change => {
+    .onSnapshot(snap=>{
+      snap.docChanges().forEach(change=>{
         if(change.type==='added'){
-          const d = change.doc.data();
-          const caller = getMember(d.caller);
-          if(confirm(`📞 ${caller.name} กำลังโทรหาคุณ\nรับสายไหม?`)){
+          const d=change.doc.data();
+          const caller=getMember(d.caller);
+          const type=d.isVideo?'วีดีโอคอล':'โทรศัพท์';
+          if(confirm(`📞 ${caller.name} กำลัง${type}\nรับสายไหม?`)){
+            currentRoomId=d.channel;
             answerCall(d);
           } else {
             change.doc.ref.update({status:'declined'});
@@ -712,47 +818,46 @@ function listenIncomingCalls(){
 }
 
 async function answerCall(d){
-  const m = getMember(d.caller);
-  document.getElementById('callAvatar').textContent = m.emoji;
-  document.getElementById('callName').textContent = m.name;
-  document.getElementById('callStatus').textContent = 'เชื่อมต่อ...';
-  document.getElementById('callOverlay').classList.add('active');
-  currentRoomId = d.channel;
-
-  try {
-    agoraClient = AgoraRTC.createClient({mode:'rtc',codec:'vp8'});
-    await agoraClient.join(AGORA_APP_ID, d.channel, null, null);
-    localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack();
-    await agoraClient.publish([localAudioTrack]);
-    agoraClient.on('user-published', async (user, mediaType) => {
-      await agoraClient.subscribe(user, mediaType);
-      if(mediaType==='audio') user.audioTrack.play();
+  isVideoCall=d.isVideo||false;
+  const m=getMember(d.caller);
+  showCallUI(m,isVideoCall,'กำลังเชื่อมต่อ...');
+  try{
+    localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:isVideoCall});
+    if(isVideoCall) document.getElementById('localVideo').srcObject=localStream;
+    peerConn=createPeer();
+    localStream.getTracks().forEach(t=>peerConn.addTrack(t,localStream));
+    await peerConn.setRemoteDescription(new RTCSessionDescription(d.offer));
+    const answer=await peerConn.createAnswer();
+    await peerConn.setLocalDescription(answer);
+    await db.collection('calls').doc(d.channel).update({
+      answer:{type:answer.type,sdp:answer.sdp}, status:'active'
     });
-    await d.ref?.update({status:'active'});
+    if(d.callerCandidates){
+      for(const c of d.callerCandidates){ try{await peerConn.addIceCandidate(new RTCIceCandidate(c));}catch(e){} }
+    }
     startCallTimer();
-  } catch(e){
-    showToast('รับสายไม่ได้: '+e.message);
-    document.getElementById('callOverlay').classList.remove('active');
-  }
+  }catch(e){ showToast('รับสายไม่ได้: '+e.message); hideCallUI(); }
 }
 
 // ===== UTILS =====
-function fmtTime(date){
-  return date.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
-}
-function escapeHtml(t){
-  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
-}
+function fmtTime(date){ return date.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'}); }
+function escHtml(t){ return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 let toastTimer;
 function showToast(msg){
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),2500);
 }
 
-// Start incoming call listener after auth
-auth.onAuthStateChanged(u => { if(u) listenIncomingCalls(); });
+// ===== PWA =====
+const manifest={name:"Family Chat",short_name:"Family Chat",start_url:"./",display:"standalone",background_color:"#06C755",theme_color:"#06C755",icons:[{src:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='40' fill='%2306C755'/%3E%3Ctext y='155' x='20' font-size='150'%3E%F0%9F%92%AC%3C/text%3E%3C/svg%3E",sizes:"192x192",type:"image/svg+xml"},{src:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='100' fill='%2306C755'/%3E%3Ctext y='410' x='50' font-size='400'%3E%F0%9F%92%AC%3C/text%3E%3C/svg%3E",sizes:"512x512",type:"image/svg+xml"}]};
+const mb=new Blob([JSON.stringify(manifest)],{type:'application/json'});
+document.getElementById('manifest-link').href=URL.createObjectURL(mb);
+if('serviceWorker' in navigator){
+  const sw=`self.addEventListener('install',e=>self.skipWaiting());self.addEventListener('activate',e=>e.waitUntil(clients.claim()));self.addEventListener('fetch',e=>e.respondWith(fetch(e.request).catch(()=>new Response(''))));`;
+  navigator.serviceWorker.register(URL.createObjectURL(new Blob([sw],{type:'application/javascript'}))).catch(()=>{});
+}
 </script>
 </body>
 </html>

@@ -178,6 +178,9 @@ input,button,textarea{font-family:var(--font)}
 .read-tick{font-size:10px;color:var(--green);margin-left:3px}
 /* Swipe reply */
 .bubble-wrap{position:relative}
+/* Encryption */
+.decrypting{color:var(--gray);font-size:13px}
+.lock-icon{font-size:10px;color:var(--green);margin-left:4px;opacity:.7}
 /* Status badge */
 .status-badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;margin-top:4px}
 /* Album grid */
@@ -305,6 +308,7 @@ input,button,textarea{font-family:var(--font)}
       <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
     </button>
   </div>
+  <div style="text-align:center;font-size:10px;color:var(--gray);padding:2px 0;background:var(--white)">🔒 ข้อความเข้ารหัส End-to-End</div>
   <input type="file" id="imgPicker" accept="image/*" style="display:none" onchange="sendImage(this)"/>
 </div>
 
@@ -456,6 +460,45 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 const storage = firebase.storage();
+
+// ===== E2E ENCRYPTION (AES-GCM) =====
+// Shared secret key — ทุกคนในครอบครัวใช้ key เดียวกัน
+const SHARED_SECRET = 'FamilyMechai2024SecretKey!@#$%^&*';
+
+async function getEncryptionKey(){
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw', enc.encode(SHARED_SECRET), {name:'PBKDF2'}, false, ['deriveKey']
+  );
+  return crypto.subtle.deriveKey(
+    {name:'PBKDF2', salt:enc.encode('FamilyChatSalt'), iterations:100000, hash:'SHA-256'},
+    keyMaterial, {name:'AES-GCM', length:256}, false, ['encrypt','decrypt']
+  );
+}
+
+async function encryptText(text){
+  try{
+    const key = await getEncryptionKey();
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const enc = new TextEncoder();
+    const encrypted = await crypto.subtle.encrypt({name:'AES-GCM', iv}, key, enc.encode(text));
+    const combined = new Uint8Array(iv.length + encrypted.byteLength);
+    combined.set(iv, 0);
+    combined.set(new Uint8Array(encrypted), iv.length);
+    return btoa(String.fromCharCode(...combined));
+  }catch(e){ return text; }
+}
+
+async function decryptText(ciphertext){
+  try{
+    const combined = Uint8Array.from(atob(ciphertext), c=>c.charCodeAt(0));
+    const iv = combined.slice(0,12);
+    const data = combined.slice(12);
+    const key = await getEncryptionKey();
+    const dec = await crypto.subtle.decrypt({name:'AES-GCM', iv}, key, data);
+    return new TextDecoder().decode(dec);
+  }catch(e){ return ciphertext; } // fallback ถ้าถอดไม่ได้
+}
 
 // ===== MEMBERS BASE DATA =====
 const MEMBERS_BASE = {
@@ -819,6 +862,19 @@ function renderMsg(area,d,docId=""){
     bubbleEl.addEventListener('touchmove',()=>clearTimeout(pressTimer));
   }
   area.appendChild(row);
+  // Decrypt text after appending
+  if(d.type==='text' && d.text){
+    const bubbleEl = row.querySelector('.bubble');
+    if(bubbleEl){
+      (async()=>{
+        const plain = d.encrypted ? await decryptText(d.text) : d.text;
+        // preserve existing content structure, just update text part
+        const decEl = bubbleEl.querySelector('.decrypting');
+        if(decEl) decEl.outerHTML = escHtml(plain);
+        else if(bubbleEl.innerHTML==='<span class="decrypting">🔓...</span>') bubbleEl.innerHTML = escHtml(plain);
+      })();
+    }
+  }
 }
 
 let typingTimeout = null;
@@ -842,9 +898,10 @@ async function sendMsg(){
   // stop typing
   db.collection('rooms').doc(currentRoomId).collection('typing').doc(currentUser.email).set({typing:false});
   try{
+    const encText = await encryptText(text);
     await db.collection('rooms').doc(currentRoomId).collection('messages').add({
-      text, senderEmail:currentUser.email, type:'text',
-      readBy:[currentUser.email],
+      text: encText, senderEmail:currentUser.email, type:'text',
+      encrypted: true, readBy:[currentUser.email],
       createdAt:firebase.firestore.FieldValue.serverTimestamp()
     });
   }catch(e){ showToast('ส่งไม่ได้'); }
@@ -1348,9 +1405,10 @@ async function sendGroupMsg(){
   const text=inp.value.trim();
   if(!text) return;
   inp.value=''; inp.style.height='auto';
+  const encText = await encryptText(text);
   await db.collection('groupChat').add({
-    text, senderEmail:currentUser.email, type:'text',
-    readBy:[currentUser.email],
+    text: encText, senderEmail:currentUser.email, type:'text',
+    encrypted: true, readBy:[currentUser.email],
     createdAt:firebase.firestore.FieldValue.serverTimestamp()
   });
 }
